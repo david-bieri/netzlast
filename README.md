@@ -72,6 +72,6 @@ No framework. No build toolchain. Single HTML file.
 **David Bieri**  
 Associate Professor, School of Public and International Affairs  
 Virginia Tech · Blacksburg, Virginia  
-[dbieri@vt.edu](mailto:dbieri@vt.edu)
+[bieri@vt.edu](mailto:dbieri@vt.edu)
 
 *This map is a research and journalism resource. It does not represent the official views of Virginia Tech.*
