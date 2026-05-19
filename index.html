@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Data Center Investment: Virginia & Maryland — Netzlast</title>
+<meta name="description" content="Interactive map of major data center deals and established campuses across Virginia and Maryland, with utility service territory overlays showing merger exposure.">
+<meta property="og:title" content="Data Center Investment: Virginia & Maryland">
+<meta property="og:description" content="Interactive policy map: 13 announced deals, 35 established campuses, utility service territories. School of Public and International Affairs, Virginia Tech.">
+<meta property="og:type" content="website">
+<style>
+/* ── Design tokens ───────────────────────────────────────────────────── */
+:root {
+  --bg:      #f8f6f1;
+  --surface: #ffffff;
+  --raised:  #f2f0eb;
+  --text:    #1a1916;
+  --muted:   #6b6963;
+  --hint:    #9a9690;
+  --border:  rgba(26,25,22,0.14);
+  --edge:    rgba(26,25,22,0.28);
+  --line:    rgba(26,25,22,0.42);
+  --r:       8px;
+  --r-lg:    12px;
+  --sans:    -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --map-bg:  #f4f1ea;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:      #18170e;
+    --surface: #22201a;
+    --raised:  #2a2822;
+    --text:    #ede9e0;
+    --muted:   #9a9488;
+    --hint:    #6a6660;
+    --border:  rgba(237,233,224,0.13);
+    --edge:    rgba(237,233,224,0.26);
+    --line:    rgba(237,233,224,0.40);
+    --map-bg:  #1e1c16;
+  }
+}
+
+/* ── Reset & base ────────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:15px;line-height:1.6}
+button,select,input{font-family:inherit}
+a{color:inherit}
+
+/* ── Layout ──────────────────────────────────────────────────────────── */
+.page{max-width:940px;margin:0 auto;padding:28px 18px 56px}
+
+/* ── Header ──────────────────────────────────────────────────────────── */
+.hdr{margin-bottom:20px;display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.hdr-left h1{font-size:20px;font-weight:500;margin-bottom:3px}
+.hdr-left p{font-size:12px;color:var(--muted);max-width:620px;line-height:1.5}
+.hdr-right{font-size:11.5px;color:var(--muted);text-align:right;flex-shrink:0}
+.hdr-right a{color:var(--muted);text-decoration:none;border-bottom:0.5px solid var(--edge);padding-bottom:1px}
+.hdr-right a:hover{color:var(--text)}
+
+/* ── Controls ────────────────────────────────────────────────────────── */
+.ctrl{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px;align-items:center}
+.ctrl label{font-size:11px;color:var(--muted);font-weight:500}
+.ctrl select{
+  font-size:11px;padding:3px 7px;border-radius:var(--r);
+  border:0.5px solid var(--edge);
+  background:var(--surface);color:var(--text);cursor:pointer
+}
+.ctrl button{
+  font-size:11px;padding:3px 9px;border-radius:var(--r);cursor:pointer;
+  border:0.5px solid var(--edge);
+  background:var(--raised);color:var(--muted)
+}
+.ctrl button.on{background:var(--surface);color:var(--text);border-color:var(--line)}
+.ctrl button:hover{background:var(--surface);color:var(--text)}
+.sep{width:0.5px;height:18px;background:var(--border);flex-shrink:0}
+
+/* ── Map wrapper ─────────────────────────────────────────────────────── */
+.mwrap{position:relative;width:100%;border:0.5px solid var(--border);border-radius:var(--r-lg)}
+#msvg{width:100%;height:520px;display:block;cursor:grab;background:var(--map-bg);border-radius:var(--r-lg)}
+#msvg:active{cursor:grabbing}
+
+/* ── Tooltip ─────────────────────────────────────────────────────────── */
+#mtt{
+  position:absolute;pointer-events:none;display:none;
+  background:var(--surface);border:0.5px solid var(--edge);
+  border-radius:var(--r);padding:9px 12px;
+  font-size:11.5px;max-width:240px;z-index:20;line-height:1.5;
+  box-shadow:0 2px 8px rgba(0,0,0,0.10)
+}
+.tt-n{font-weight:500;font-size:13px;margin:0 0 5px;color:var(--text)}
+.tt-r{display:flex;justify-content:space-between;gap:8px;margin:2px 0}
+.tt-l{color:var(--muted);font-size:11px}
+.tt-v{color:var(--text);font-weight:500;font-size:11px;text-align:right}
+.tt-tag{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10.5px;font-weight:500;margin-top:4px}
+.tt-hint{font-size:10px;color:var(--muted);margin-top:5px;border-top:0.5px solid var(--border);padding-top:4px}
+
+/* ── Map overlay buttons ─────────────────────────────────────────────── */
+.vbtns{position:absolute;bottom:10px;left:10px;display:flex;gap:4px;z-index:10;flex-wrap:wrap}
+.vbtn{
+  font-size:10px;padding:3px 7px;border-radius:var(--r);
+  background:var(--surface);border:0.5px solid var(--edge);
+  cursor:pointer;color:var(--muted)
+}
+.vbtn:hover{background:var(--raised);color:var(--text)}
+.zbtns{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:3px;z-index:10}
+.zbtn{
+  width:26px;height:26px;border-radius:var(--r);
+  background:var(--surface);border:0.5px solid var(--edge);
+  cursor:pointer;font-size:16px;font-weight:300;
+  display:flex;align-items:center;justify-content:center;color:var(--text)
+}
+.zbtn:hover{background:var(--raised)}
+
+/* ── Legend ──────────────────────────────────────────────────────────── */
+.leg{display:flex;gap:18px;flex-wrap:wrap;margin-top:12px}
+.lg .lh{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 5px}
+.lr{display:flex;align-items:center;gap:6px;margin:3px 0;font-size:11px;color:var(--muted)}
+.ldot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ldiam{width:8px;height:8px;transform:rotate(45deg);flex-shrink:0}
+.lring{width:8px;height:8px;border-radius:50%;flex-shrink:0;background:transparent;border-width:2px;border-style:solid}
+.lsq{width:12px;height:8px;flex-shrink:0;border-radius:2px;border:0.5px solid transparent}
+
+/* ── Detail card ─────────────────────────────────────────────────────── */
+.det{
+  margin-top:12px;border:0.5px solid var(--border);
+  border-radius:var(--r-lg);padding:13px 15px;display:none;
+  background:var(--surface)
+}
+.det-hd{display:flex;align-items:baseline;gap:8px;margin-bottom:9px}
+.det-nm{font-weight:500;font-size:14px;margin:0;color:var(--text)}
+.det-x{margin-left:auto;cursor:pointer;background:none;border:none;color:var(--muted);font-size:20px;padding:0;line-height:1}
+.det-x:hover{color:var(--text)}
+.det-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:8px}
+@media(max-width:600px){.det-grid{grid-template-columns:repeat(2,1fr)}}
+.dc .dl{font-size:10px;color:var(--muted);margin:0 0 1px}
+.dc .dv{font-size:12px;font-weight:500;margin:0;color:var(--text)}
+.det-iss{font-size:11.5px;color:var(--muted);padding-top:8px;border-top:0.5px solid var(--border);margin:0}
+
+/* ── Badges ──────────────────────────────────────────────────────────── */
+.badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:10.5px;font-weight:500}
+.b-active{background:#EAF3DE;color:#3B6D11}
+.b-dead{background:#F1EFE8;color:#5F5E5A}
+.b-contested{background:#FAEEDA;color:#854F0B}
+.b-announced{background:#E6F1FB;color:#185FA5}
+
+/* ── Footnote & footer ───────────────────────────────────────────────── */
+.footnote{font-size:10.5px;color:var(--muted);margin-top:10px;line-height:1.6}
+.page-footer{margin-top:40px;padding-top:16px;border-top:0.5px solid var(--border);font-size:11px;color:var(--hint);line-height:1.6}
+.page-footer a{color:var(--muted);text-decoration:none}
+.page-footer a:hover{color:var(--text)}
+
+/* ── Visually hidden (a11y) ──────────────────────────────────────────── */
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ── Header ── -->
+<header class="hdr">
+  <div class="hdr-left">
+    <h1>Data Center Investment: Virginia &amp; Maryland</h1>
+    <p>13 major announced deals · ~35 established operational campuses · utility service territory overlays showing NextEra–Dominion merger exposure · School of Public and International Affairs, Virginia Tech</p>
+  </div>
+  <div class="hdr-right">
+    <a href="https://github.com/david-bieri/netzlast" target="_blank" rel="noopener">GitHub ↗</a><br>
+    <span>Updated May 2026</span>
+  </div>
+</header>
+
+<!-- ── Controls ── -->
+<div class="ctrl" role="toolbar" aria-label="Map filters and layer toggles">
+  <label for="fs">Deals:</label>
+  <select id="fs" onchange="upd()">
+    <option value="">All status</option>
+    <option>Active</option><option>Dead</option>
+    <option>Contested</option><option>Announced</option>
+  </select>
+  <select id="fst" onchange="upd()">
+    <option value="">All states</option>
+    <option value="VA">Virginia</option>
+    <option value="MD">Maryland</option>
+  </select>
+  <select id="fu" onchange="upd()">
+    <option value="">All utilities</option>
+    <option value="Dominion">Dominion</option>
+    <option value="BGE">BGE</option>
+    <option value="Pepco">Pepco</option>
+    <option value="REC">REC</option>
+  </select>
+  <div class="sep" role="separator"></div>
+  <label>Layers:</label>
+  <button id="btnUtil" class="on" onclick="toggleLayer('util')">▦ Utility areas</button>
+  <button id="btnDens" class="on" onclick="toggleLayer('dens')">⬡ Density</button>
+  <button id="btnEst"  class="on" onclick="toggleLayer('est')">◇ Established</button>
+  <div class="sep" role="separator"></div>
+  <button onclick="rv()">Reset view</button>
+</div>
+
+<!-- ── Map ── -->
+<div class="mwrap" id="mw" role="region" aria-label="Interactive data center map">
+  <h2 class="vh">Interactive map of data center activity in Virginia and Maryland. Use controls above to filter and toggle layers. Click deal markers for details.</h2>
+  <svg id="msvg" role="img" aria-label="Map of Virginia and Maryland showing data center deals, established campuses, and utility service territories"></svg>
+  <div id="mtt" role="tooltip" aria-live="polite"></div>
+  <div class="vbtns">
+    <button class="vbtn" onclick="rv()">Full view</button>
+    <button class="vbtn" onclick="zdc()">DC metro</button>
+    <button class="vbtn" onclick="zss()">Southside VA</button>
+    <button class="vbtn" onclick="zmd()">MD cluster</button>
+  </div>
+  <div class="zbtns" aria-label="Zoom controls">
+    <button class="zbtn" aria-label="Zoom in"  onclick="zoomBy(1.5)">+</button>
+    <button class="zbtn" aria-label="Zoom out" onclick="zoomBy(0.67)">−</button>
+  </div>
+</div>
+
+<!-- ── Legend ── -->
+<div class="leg" role="list" aria-label="Map legend">
+  <div class="lg" role="listitem">
+    <p class="lh">Deal status (circle fill)</p>
+    <div class="lr"><span class="ldot" style="background:#1D9E75" aria-hidden="true"></span>Active</div>
+    <div class="lr"><span class="ldot" style="background:#888780" aria-hidden="true"></span>Dead / halted</div>
+    <div class="lr"><span class="ldot" style="background:#EF9F27" aria-hidden="true"></span>Contested / paused</div>
+    <div class="lr"><span class="ldot" style="background:#378ADD" aria-hidden="true"></span>Announced</div>
+  </div>
+  <div class="lg" role="listitem">
+    <p class="lh">Utility (ring color)</p>
+    <div class="lr"><span class="lring" style="border-color:#185FA5" aria-hidden="true"></span>Dominion Energy</div>
+    <div class="lr"><span class="lring" style="border-color:#534AB7" aria-hidden="true"></span>BGE (Exelon)</div>
+    <div class="lr"><span class="lring" style="border-color:#854F0B;border-style:dashed" aria-hidden="true"></span>Pepco (Exelon)</div>
+    <div class="lr"><span class="lring" style="border-color:#0F6E56;border-style:dotted" aria-hidden="true"></span>Rappahannock EC</div>
+  </div>
+  <div class="lg" role="listitem">
+    <p class="lh">Utility service areas</p>
+    <div class="lr"><span class="lsq" style="background:#C8DEF0;border-color:#185FA5" aria-hidden="true"></span>Dominion <em style="font-size:10px">(merger exposed)</em></div>
+    <div class="lr"><span class="lsq" style="background:#DDD8F2;border-color:#534AB7" aria-hidden="true"></span>BGE — Exelon (MD)</div>
+    <div class="lr"><span class="lsq" style="background:#F5E8D0;border-color:#854F0B" aria-hidden="true"></span>Pepco — Exelon (MD/DC)</div>
+    <div class="lr"><span class="lsq" style="background:#C8EAD8;border-color:#0F6E56" aria-hidden="true"></span>Rappahannock EC (coop.)</div>
+    <div class="lr"><span class="lsq" style="background:#E0DDD8;border-color:#5F5E5A" aria-hidden="true"></span>Appalachian Power (AEP)</div>
+    <div class="lr"><span class="lsq" style="background:#D8E2F2;border-color:#3266ad" aria-hidden="true"></span>NOVEC / other VA coops</div>
+    <div class="lr"><span class="lsq" style="background:#EDE8DC;border-color:#888780" aria-hidden="true"></span>Other MD utilities</div>
+  </div>
+  <div class="lg" role="listitem">
+    <p class="lh">Other layers</p>
+    <div class="lr"><span class="ldiam" style="background:#9a9690" aria-hidden="true"></span>Established campus (hover)</div>
+    <div class="lr"><span style="width:12px;height:12px;border-radius:50%;background:#b8b3aa;opacity:0.3;border:1px dashed #9a9590;display:inline-block;flex-shrink:0" aria-hidden="true"></span>Density zone (NoVA 300+)</div>
+    <div class="lr"><span style="width:12px;flex-shrink:0" aria-hidden="true">○</span>Circle size ∝ investment</div>
+  </div>
+</div>
+
+<!-- ── Deal detail card ── -->
+<div class="det" id="det" role="region" aria-label="Selected deal details" aria-hidden="true">
+  <div class="det-hd">
+    <p class="det-nm" id="dnm"></p>
+    <button class="det-x" aria-label="Close detail panel"
+      onclick="document.getElementById('det').style.display='none';document.getElementById('det').setAttribute('aria-hidden','true')">×</button>
+  </div>
+  <div class="det-grid" id="dgr"></div>
+  <p class="det-iss" id="diss"></p>
+</div>
+
+<p class="footnote">Utility service territories are approximate county-level assignments based on primary utility; cooperative boundaries are especially irregular. Established campuses are a curated sample — Northern Virginia alone has 600+ total operational data centers. Sources: WSLS, VEDP, MD Commerce, Data Center Dynamics, Bisnow, Baltimore Banner, Maryland Matters, court filings, SEC filings (May 2026).</p>
+
+<!-- ── Footer ── -->
+<footer class="page-footer">
+  <p>David Bieri · School of Public and International Affairs, Virginia Tech ·
+  <a href="mailto:dbieri@vt.edu">dbieri@vt.edu</a> ·
+  Research: "Who Pays for AI's Power Appetite? Virginia as the First AI Resource State" ·
+  <a href="https://github.com/david-bieri/netzlast" target="_blank" rel="noopener">GitHub</a></p>
+</footer>
+
+</div><!-- /page -->
+
+<!-- ── Libraries ── -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/topojson/3.0.2/topojson.min.js"></script>
+
+<script>
+/* ── Data ──────────────────────────────────────────────────────────── */
+const DEALS = [
+  {id:"bh",   n:"STACK / Berry Hill",           dv:"STACK Infrastructure",                   st:"VA", lat:36.78, lng:-79.47, inv:100,   iL:"$100B",        s:"Active",    u:"Dominion", reg:"Southside VA",    tx:"$48.5M+/yr",            jo:"2,500 FT",        cp:"TBA (GW-scale)",      tl:"30 yrs (2026–2056)",          iss:"Tax exemption risk; Dominion merger; groundwater concerns"},
+  {id:"pwdg", n:"PW Digital Gateway",           dv:"QTS (Blackstone) + Compass (Brookfield)", st:"VA", lat:38.82, lng:-77.66, inv:24.7,  iL:"~$24.7B",      s:"Dead",      u:"Dominion", reg:"N. Virginia",     tx:"$400M (proj.)",          jo:"Thousands (proj.)", cp:"~3,000 MW+",          tl:"Never built",                 iss:"VA Court of Appeals voided rezoning; Manassas battlefield; Compass withdrew Apr 2026; $1.7M county legal fees"},
+  {id:"aws",  n:"AWS / Northern Virginia",       dv:"Amazon Web Services",                    st:"VA", lat:39.04, lng:-77.49, inv:86.9,  iL:"$86.9B total", s:"Active",    u:"Dominion", reg:"N. Virginia",     tx:"$334M/yr",               jo:"8,710 FT direct",  cp:"Multi-GW (50+ DCs)",  tl:"2006–2040",                   iss:"Multi-county complexity; rural expansion opposition; $140M MEI grant tied to GA"},
+  {id:"goog", n:"Google / Chesterfield",         dv:"Google (Alphabet)",                      st:"VA", lat:37.37, lng:-77.57, inv:9,     iL:"~$9B",         s:"Active",    u:"Dominion", reg:"Central VA",      tx:"Not public",             jo:"Several hundred",  cp:"300 MW+",             tl:"Multi-phase to ~2030",        iss:"Grid capacity; Dominion merger alters infrastructure planning"},
+  {id:"ca",   n:"CleanArc VA1 / Caroline Co.",   dv:"CleanArc Data Centers",                  st:"VA", lat:37.88, lng:-77.28, inv:3,     iL:"$3B",          s:"Active",    u:"REC",      reg:"Rural VA",        tx:"Largest in co. history", jo:"Not public",       cp:"900 MW",              tl:"Phase 1 Q1 2027",             iss:"On REC grid — insulated from Dominion merger; REC headroom at 900 MW scale"},
+  {id:"stst", n:"STACK / Stafford Campus",       dv:"STACK Infrastructure",                   st:"VA", lat:38.39, lng:-77.36, inv:0,     iL:"Not disclosed",s:"Active",    u:"Dominion", reg:"N. Virginia",     tx:"Not public",             jo:"Not public",       cp:"1,800 MW",            tl:"1st bldg near complete",      iss:"NoVA grid congestion; 6 substation commitments under merger uncertainty"},
+  {id:"ph95", n:"PowerHouse 95 / Spotsylvania",  dv:"PowerHouse + Harrison Street",           st:"VA", lat:38.20, lng:-77.63, inv:1,     iL:"~$1B+",        s:"Active",    u:"Dominion", reg:"N. Virginia",     tx:"Not public",             jo:"Not public",       cp:"800 MW",              tl:"Active; 150 MW online Oct 2025",iss:"Dominion capex timing contingent on new ownership decisions"},
+  {id:"va4",  n:"Vantage VA4 / Stafford",        dv:"Vantage Data Centers",                   st:"VA", lat:38.46, lng:-77.42, inv:2,     iL:"$2B",          s:"Active",    u:"Dominion", reg:"N. Virginia",     tx:"Not public",             jo:"Not public",       cp:"~200 MW",             tl:"First bldg late 2027",        iss:"Grid congestion; substation delay risk post-merger"},
+  {id:"ec",   n:"EdgeCore / Louisa Co.",         dv:"EdgeCore Digital Infrastructure",         st:"VA", lat:37.97, lng:-77.93, inv:0.042, iL:"$42M (land)",  s:"Announced", u:"REC",      reg:"Rural VA",        tx:"Not public",             jo:"Not public",       cp:"1,100 MW",            tl:"Announced June 2025",         iss:"Not on Dominion grid; REC headroom uncertain at 1.1 GW scale"},
+  {id:"qf",   n:"Quantum Frederick",             dv:"TPG Real Estate + Rowan + Aligned",       st:"MD", lat:39.32, lng:-77.45, inv:5,     iL:"$5B (campus)", s:"Active",    u:"BGE",      reg:"MD – Frederick",  tx:"$215M/yr (proj.)",       jo:"4,200 FTE (peak)", cp:"Multi-GW (11 DCs)",   tl:"Active; full build ~2036",    iss:"Partner dispute (Quantum Loophole removed Dec 2025); MPRP transmission backlash"},
+  {id:"bs",   n:"Brightseat Tech Park (Landover)",dv:"Lerner Enterprises + Tower Cos.",        st:"MD", lat:38.93, lng:-76.88, inv:5,     iL:"$5B",          s:"Contested", u:"Pepco",    reg:"MD – PG County",  tx:"$13.7M/yr (proj.)",      jo:"Not public",       cp:"820 MW",              tl:"Approved 2024; moratorium Jan 2026",iss:"23K-petition opposition; environmental justice (63% Black community); county moratorium"},
+  {id:"wl",   n:"Woodlawn / Baltimore Co.",      dv:"Security Land & Development LP",          st:"MD", lat:39.37, lng:-76.74, inv:0,     iL:"Not disclosed",s:"Announced", u:"BGE",      reg:"MD – Baltimore",  tx:"Not public",             jo:"Not public",       cp:"150 MW",              tl:"Construction planned mid-2026",iss:"Limited public process; no statewide PSC certificate required"},
+  {id:"dk",   n:"Dickerson / Montgomery Co.",    dv:"Undisclosed",                             st:"MD", lat:39.20, lng:-77.36, inv:0,     iL:"Not disclosed",s:"Contested", u:"Pepco",    reg:"MD – Montgomery", tx:"Not public",             jo:"Not public",       cp:"TBA",                 tl:"Permitting; county moratorium through 2026",iss:"Former Pepco coal plant; county moratorium; 80% self-generation requirement proposed"}
+];
+
+const ESTABLISHED = [
+  {n:"Equinix Ashburn Campus (DC1–DC22)", op:"Equinix",              lat:39.042,lng:-77.490,mw:500,sub:"Ashburn, Loudoun Co., VA"},
+  {n:"Digital Realty Ashburn",            op:"Digital Realty",       lat:39.048,lng:-77.484,mw:400,sub:"Ashburn, Loudoun Co., VA"},
+  {n:"CloudHQ LC4 (180 MW)",              op:"CloudHQ",              lat:39.034,lng:-77.498,mw:180,sub:"Ashburn, Loudoun Co., VA"},
+  {n:"AWS Ashburn cluster",               op:"Amazon Web Services",  lat:39.057,lng:-77.476,mw:300,sub:"Ashburn, Loudoun Co., VA"},
+  {n:"Microsoft Ashburn",                 op:"Microsoft Azure",      lat:39.027,lng:-77.465,mw:200,sub:"Ashburn, Loudoun Co., VA"},
+  {n:"Google Ashburn",                    op:"Google",               lat:39.038,lng:-77.505,mw:120,sub:"Ashburn, Loudoun Co., VA"},
+  {n:"CyrusOne Sterling (NVA1–3)",        op:"CyrusOne",             lat:39.012,lng:-77.428,mw:105,sub:"Sterling, Loudoun Co., VA"},
+  {n:"QTS Sterling",                      op:"QTS Data Centers",     lat:39.008,lng:-77.418,mw:90, sub:"Sterling, Loudoun Co., VA"},
+  {n:"Microsoft Growth Mindset Campus",   op:"Microsoft Azure",      lat:39.018,lng:-77.438,mw:120,sub:"Sterling, Loudoun Co., VA"},
+  {n:"Vantage VA2 Sterling",              op:"Vantage Data Centers", lat:39.004,lng:-77.432,mw:96, sub:"Sterling, Loudoun Co., VA"},
+  {n:"Equinix DC14–16 Chantilly",         op:"Equinix",              lat:38.878,lng:-77.435,mw:120,sub:"Chantilly, Fairfax Co., VA"},
+  {n:"Digital Realty Chantilly",          op:"Digital Realty",       lat:38.874,lng:-77.442,mw:100,sub:"Chantilly, Fairfax Co., VA"},
+  {n:"CyrusOne Chantilly",                op:"CyrusOne",             lat:38.882,lng:-77.428,mw:60, sub:"Chantilly, Fairfax Co., VA"},
+  {n:"CoreSite Reston (VA1–VA3)",         op:"CoreSite",             lat:38.960,lng:-77.395,mw:150,sub:"Reston, Fairfax Co., VA"},
+  {n:"Equinix DC10–11 Reston",            op:"Equinix",              lat:38.963,lng:-77.385,mw:80, sub:"Reston, Fairfax Co., VA"},
+  {n:"Iron Mountain Manassas (VA1–7)",    op:"Iron Mountain",        lat:38.752,lng:-77.500,mw:200,sub:"Manassas, Prince William Co., VA"},
+  {n:"CloudHQ MCC Campus",               op:"CloudHQ",              lat:38.742,lng:-77.486,mw:150,sub:"Manassas, Prince William Co., VA"},
+  {n:"AWS Manassas",                      op:"Amazon Web Services",  lat:38.760,lng:-77.472,mw:100,sub:"Manassas, Prince William Co., VA"},
+  {n:"Microsoft Manassas",               op:"Microsoft Azure",      lat:38.746,lng:-77.510,mw:80, sub:"Manassas, Prince William Co., VA"},
+  {n:"Corscale Gainesville Crossing",     op:"Corscale",             lat:38.806,lng:-77.615,mw:72, sub:"Gainesville, Prince William Co., VA"},
+  {n:"Google Leesburg",                   op:"Google",               lat:39.115,lng:-77.565,mw:60, sub:"Leesburg, Loudoun Co., VA"},
+  {n:"Equinix DC6 (Ashburn South)",       op:"Equinix",              lat:39.036,lng:-77.494,mw:60, sub:"Ashburn, Loudoun Co., VA"},
+  {n:"QTS Richmond",                      op:"QTS Data Centers",     lat:37.548,lng:-77.437,mw:50, sub:"Richmond, VA"},
+  {n:"CyrusOne Richmond",                 op:"CyrusOne",             lat:37.542,lng:-77.447,mw:40, sub:"Richmond, VA"},
+  {n:"CyrusOne / Aligned Beltsville",     op:"CyrusOne",             lat:39.038,lng:-76.882,mw:40, sub:"Beltsville, PG Co., MD"},
+  {n:"Digital Realty Rockville",          op:"Digital Realty",       lat:39.082,lng:-77.150,mw:30, sub:"Rockville, Montgomery Co., MD"},
+  {n:"TierPoint Baltimore",               op:"TierPoint",            lat:39.285,lng:-76.622,mw:15, sub:"Baltimore, MD"},
+  {n:"DataBank Baltimore",                op:"DataBank",             lat:39.293,lng:-76.614,mw:10, sub:"Baltimore, MD"},
+  {n:"NSA Data Center (Fort Meade)",      op:"U.S. Government",      lat:39.117,lng:-76.771,mw:60, sub:"Fort Meade, Anne Arundel Co., MD"},
+  {n:"Aligned IAD-06 at Quantum Frederick",op:"Aligned Data Centers",lat:39.318,lng:-77.462,mw:72, sub:"Frederick Co., MD"},
+  {n:"Ntirety / DLT Herndon",             op:"Ntirety",              lat:38.979,lng:-77.380,mw:15, sub:"Herndon, Fairfax Co., VA"},
+  {n:"Zayo Reston",                       op:"Zayo",                 lat:38.955,lng:-77.390,mw:10, sub:"Reston, Fairfax Co., VA"},
+  {n:"Lumen / CenturyLink NoVA",          op:"Lumen",                lat:38.994,lng:-77.410,mw:12, sub:"Herndon, Fairfax Co., VA"},
+  {n:"TeraWulf Baltimore County",         op:"TeraWulf",             lat:39.360,lng:-76.700,mw:8,  sub:"Baltimore County, MD"}
+];
+
+const DENSITY = [
+  {n:"Ashburn / Data Center Alley",     cnt:"148+ named facilities in Ashburn alone; 300+ in Loudoun County; ~4,000 MW commissioned. The world's largest data center cluster.",lat:39.036,lng:-77.488,r:16},
+  {n:"Sterling / Dulles Corridor",      cnt:"89+ facilities. Major operators: QTS, CyrusOne, Vantage, Microsoft. Adjacent to Ashburn ecosystem.",lat:39.008,lng:-77.430,r:10},
+  {n:"Manassas / Prince William Cluster",cnt:"96+ facilities. Anchored by Iron Mountain (142 acres), CloudHQ campus, AWS, Microsoft.",lat:38.750,lng:-77.492,r:9},
+  {n:"Reston / Chantilly / Herndon",    cnt:"129+ facilities across Fairfax County. CoreSite, Equinix, Digital Realty. Older market, tighter grid.",lat:38.920,lng:-77.408,r:10}
+];
+
+// County FIPS → primary utility
+const FU = {
+  '51107':'DOM','51059':'DOM','51153':'DOM','51179':'DOM','51177':'DOM',
+  '51085':'DOM','51087':'DOM','51041':'DOM','51760':'DOM','51570':'DOM',
+  '51670':'DOM','51590':'DOM','51143':'DOM','51083':'DOM','51049':'DOM',
+  '51075':'DOM','51145':'DOM','51053':'DOM','51183':'DOM','51031':'DOM',
+  '51135':'DOM','51095':'DOM','51199':'DOM','51700':'DOM','51710':'DOM',
+  '51740':'DOM','51800':'DOM','51810':'DOM','51550':'DOM','51650':'DOM',
+  '51735':'DOM','51069':'DOM','51840':'DOM','51043':'DOM','51187':'DOM',
+  '51139':'DOM','51165':'DOM','51003':'DOM','51540':'DOM','51065':'DOM',
+  '51057':'DOM','51149':'DOM','51147':'DOM','51730':'DOM','51115':'DOM',
+  '51119':'DOM','51073':'DOM','51001':'DOM','51131':'DOM','51067':'DOM',
+  '51690':'DOM','51089':'DOM','51133':'DOM','51097':'DOM','51101':'DOM',
+  '51093':'DOM','51171':'DOM','51660':'DOM','51025':'DOM','51103':'DOM',
+  '51033':'REC','51109':'REC','51099':'REC','51113':'REC','51157':'REC',
+  '51047':'REC','51137':'REC','51079':'REC',
+  '51061':'NOVEC',
+  '51027':'AEP','51051':'AEP','51105':'AEP','51167':'AEP','51169':'AEP',
+  '51185':'AEP','51195':'AEP','51191':'AEP','51173':'AEP','51077':'AEP',
+  '51021':'AEP','51197':'AEP','51035':'AEP','51141':'AEP','51063':'AEP',
+  '51121':'AEP','51750':'AEP','51045':'AEP','51005':'AEP','51580':'AEP',
+  '51017':'AEP','51163':'AEP','51770':'AEP','51023':'AEP','51161':'AEP',
+  '51775':'AEP','51019':'AEP','51515':'AEP','51071':'AEP','51155':'AEP',
+  '51125':'AEP',
+  '24510':'BGE','24005':'BGE','24003':'BGE','24013':'BGE','24021':'BGE',
+  '24027':'BGE','24025':'BGE','24015':'BGE','24019':'BGE',
+  '24031':'PEPCO','24033':'PEPCO','11001':'PEPCO',
+  '24009':'SMECO','24017':'SMECO','24037':'SMECO',
+  '24001':'PEMD','24043':'PEMD','24023':'PEMD',
+  '24041':'DELM','24045':'DELM','24047':'DELM','24039':'DELM',
+  '24035':'DELM','24029':'DELM','24011':'DELM'
+};
+
+const UC = {
+  DOM:   {f:'#C8DEF0',s:'#185FA5',lbl:'Dominion Energy (NextEra merger exposed)'},
+  BGE:   {f:'#DDD8F2',s:'#534AB7',lbl:'BGE / Baltimore Gas & Electric (Exelon)'},
+  PEPCO: {f:'#F5E8D0',s:'#854F0B',lbl:'Pepco / Potomac Electric (Exelon)'},
+  REC:   {f:'#C8EAD8',s:'#0F6E56',lbl:'Rappahannock Electric Cooperative'},
+  AEP:   {f:'#E0DDD8',s:'#5F5E5A',lbl:'Appalachian Power (AEP)'},
+  NOVEC: {f:'#D8E2F2',s:'#3266ad',lbl:'NOVEC / Northern Virginia Electric Cooperative'},
+  SMECO: {f:'#F0E8D8',s:'#888780',lbl:'SMECO (Southern Maryland Electric Cooperative)'},
+  PEMD:  {f:'#E8E6E0',s:'#888780',lbl:'Potomac Edison / FirstEnergy (western MD)'},
+  DELM:  {f:'#EAE6E0',s:'#888780',lbl:'Delmarva Power / Exelon (Eastern Shore MD)'}
+};
+
+const SC  = {Active:'#1D9E75',Dead:'#888780',Contested:'#EF9F27',Announced:'#378ADD'};
+const SBCLS = {Active:'b-active',Dead:'b-dead',Contested:'b-contested',Announced:'b-announced'};
+const UR  = {Dominion:{c:'#185FA5',d:''},BGE:{c:'#534AB7',d:''},Pepco:{c:'#854F0B',d:'5,3'},REC:{c:'#0F6E56',d:'2,3'}};
+const gr  = iv => Math.max(4.5, Math.sqrt(iv || 0) * 3.2);
+
+/* ── Layer state ─────────────────────────────────────────────────────── */
+const LY = {util:true, dens:true, est:true};
+function toggleLayer(k) {
+  LY[k] = !LY[k];
+  document.getElementById('btn' + k.charAt(0).toUpperCase() + k.slice(1))
+          .classList.toggle('on', LY[k]);
+  ({util:gUtil, dens:gDens, est:gEst})[k].style('display', LY[k] ? null : 'none');
+}
+
+/* ── SVG setup ───────────────────────────────────────────────────────── */
+const W = 900, H = 520;
+const svg   = d3.select('#msvg').attr('viewBox', `0 0 ${W} ${H}`).attr('preserveAspectRatio', 'xMidYMid meet');
+const gAll  = svg.append('g');
+const gBase = gAll.append('g');
+const gUtil = gAll.append('g');
+const gBord = gAll.append('g');
+const gLbl  = gAll.append('g');
+const gDens = gAll.append('g');
+const gEst  = gAll.append('g');
+const gDeals= gAll.append('g');
+
+const proj = d3.geoMercator().center([-78.6, 38.35]).scale(5900).translate([W/2, H/2]);
+const pth  = d3.geoPath().projection(proj);
+
+const zm = d3.zoom().scaleExtent([1, 14]).on('zoom', e => gAll.attr('transform', e.transform));
+svg.call(zm);
+
+function rv()      { svg.transition().duration(500).call(zm.transform, d3.zoomIdentity); }
+function zoomBy(f) { svg.transition().duration(250).call(zm.scaleBy, f); }
+function zdc()     { const c = proj([-77.22, 38.98]); svg.transition().duration(600).call(zm.transform, d3.zoomIdentity.translate(W/2,H/2).scale(5).translate(-c[0],-c[1])); }
+function zss()     { const c = proj([-79.5,  36.82]); svg.transition().duration(600).call(zm.transform, d3.zoomIdentity.translate(W/2,H/2).scale(5.5).translate(-c[0],-c[1])); }
+function zmd()     { const c = proj([-77.05, 39.28]); svg.transition().duration(600).call(zm.transform, d3.zoomIdentity.translate(W/2,H/2).scale(5.5).translate(-c[0],-c[1])); }
+
+/* ── Tooltip ─────────────────────────────────────────────────────────── */
+const mwEl = document.getElementById('mw');
+const ttEl = document.getElementById('mtt');
+
+function posTT(e) {
+  const rb = mwEl.getBoundingClientRect();
+  const mx = e.clientX - rb.left, my = e.clientY - rb.top;
+  ttEl.style.left = (mx > W * 0.58 ? mx - 252 : mx + 14) + 'px';
+  ttEl.style.top  = Math.max(0, my > H * 0.65 ? my - 160 : my - 8) + 'px';
+}
+const hideTT = () => ttEl.style.display = 'none';
+
+function showDealTT(e, d) {
+  posTT(e); ttEl.style.display = 'block';
+  ttEl.innerHTML = `<p class="tt-n">${d.n}</p>
+    <div class="tt-r"><span class="tt-l">Developer</span><span class="tt-v" style="font-size:10px">${d.dv}</span></div>
+    <div class="tt-r"><span class="tt-l">Investment</span><span class="tt-v">${d.iL}</span></div>
+    <div class="tt-r"><span class="tt-l">Capacity</span><span class="tt-v">${d.cp}</span></div>
+    <div class="tt-r"><span class="tt-l">Utility</span><span class="tt-v">${d.u}</span></div>
+    <div class="tt-r"><span class="tt-l">Status</span><span class="tt-v"><span class="badge ${SBCLS[d.s]}">${d.s}</span></span></div>
+    <p class="tt-hint">Click for full details</p>`;
+}
+function showEstTT(e, d) {
+  posTT(e); ttEl.style.display = 'block';
+  ttEl.innerHTML = `<p class="tt-n">${d.n}</p>
+    <div class="tt-r"><span class="tt-l">Operator</span><span class="tt-v">${d.op}</span></div>
+    <div class="tt-r"><span class="tt-l">Approx. capacity</span><span class="tt-v">~${d.mw} MW</span></div>
+    <div class="tt-r"><span class="tt-l">Location</span><span class="tt-v" style="font-size:10px;text-align:right">${d.sub}</span></div>
+    <span class="tt-tag" style="background:#F1EFE8;color:#5F5E5A">Established / operational</span>`;
+}
+function showDensTT(e, d) {
+  posTT(e); ttEl.style.display = 'block';
+  ttEl.innerHTML = `<p class="tt-n">${d.n}</p>
+    <p style="font-size:11px;color:var(--muted);margin:4px 0 0">${d.cnt}</p>
+    <span class="tt-tag" style="background:#F1EFE8;color:#5F5E5A;margin-top:5px;display:inline-block">Density zone — representative sample only</span>`;
+}
+function showUtilTT(e, util) {
+  const uc = UC[util]; if (!uc) return;
+  posTT(e); ttEl.style.display = 'block';
+  ttEl.innerHTML = `<p class="tt-n">${uc.lbl}</p>
+    <span class="tt-tag" style="background:#F1EFE8;color:#5F5E5A">Utility service territory (approximate)</span>`;
+}
+
+/* ── Deal detail card ────────────────────────────────────────────────── */
+function showDetail(d) {
+  document.getElementById('dnm').textContent = d.n;
+  document.getElementById('dgr').innerHTML = [
+    {l:'Region',   v:d.reg}, {l:'Investment', v:d.iL}, {l:'Capacity', v:d.cp},
+    {l:'Timeline', v:d.tl},  {l:'FT Jobs',    v:d.jo}, {l:'Annual tax',v:d.tx},
+    {l:'Utility',  v:d.u},   {l:'Status',     v:`<span class="badge ${SBCLS[d.s]}">${d.s}</span>`}
+  ].map(x => `<div class="dc"><p class="dl">${x.l}</p><p class="dv">${x.v}</p></div>`).join('');
+  document.getElementById('diss').innerHTML = '<strong>Key issue:</strong> ' + d.iss;
+  const det = document.getElementById('det');
+  det.style.display = 'block';
+  det.setAttribute('aria-hidden', 'false');
+  det.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+/* ── Deal filter & render ────────────────────────────────────────────── */
+let fp = [...DEALS];
+function upd() {
+  const fs  = document.getElementById('fs').value;
+  const fst = document.getElementById('fst').value;
+  const fu  = document.getElementById('fu').value;
+  fp = DEALS.filter(d => (!fs || d.s === fs) && (!fst || d.st === fst) && (!fu || d.u.includes(fu)));
+  renderDeals();
+}
+
+function renderDeals() {
+  gDeals.selectAll('*').remove();
+  fp.forEach(d => {
+    const [px, py] = proj([d.lng, d.lat]);
+    const r = gr(d.inv), ur = UR[d.u] || {c:'#185FA5', d:''};
+    const mg = gDeals.append('g').attr('transform', `translate(${px},${py})`).style('cursor', 'pointer');
+    mg.append('circle').attr('r', r+2.8).attr('fill', 'none').attr('stroke', ur.c).attr('stroke-width', 2).attr('stroke-dasharray', ur.d || 'none').attr('opacity', 0.88);
+    mg.append('circle').attr('r', r).attr('fill', SC[d.s] || '#888').attr('opacity', 0.88);
+    mg.append('circle').attr('r', 2.5).attr('cx', r*0.5).attr('cy', -r*0.5).attr('fill', d.st === 'VA' ? '#185FA5' : '#3B6D11').attr('opacity', 0.9);
+    if (r >= 14) {
+      mg.append('text').attr('text-anchor', 'middle').attr('dy', '0.35em').attr('font-size', 8.5).attr('font-weight', '500').attr('fill', 'white').attr('pointer-events', 'none')
+        .text(d.inv >= 10 ? d.iL.replace('$','').replace(' total','') : '');
+    }
+    mg.on('mouseover', e => showDealTT(e, d))
+      .on('mousemove', e => showDealTT(e, d))
+      .on('mouseout',  hideTT)
+      .on('click',     () => { hideTT(); showDetail(d); });
+  });
+}
+
+/* ── Load topology and render ────────────────────────────────────────── */
+d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/counties-10m.json').then(us => {
+  const counties = topojson.feature(us, us.objects.counties);
+  const states   = topojson.feature(us, us.objects.states);
+  const main     = new Set(['51','24','11']);
+  const ctx      = new Set(['51','24','11','54','37','42','10','39']);
+
+  const mainC = counties.features.filter(f => main.has(String(f.id).padStart(5,'0').slice(0,2)));
+  const mainS = states.features.filter(f => main.has(String(f.id).padStart(2,'0')));
+  const ctxS  = states.features.filter(f => ctx.has(String(f.id).padStart(2,'0')) && !main.has(String(f.id).padStart(2,'0')));
+
+  // Surrounding states
+  gBase.selectAll('.cs').data(ctxS).enter().append('path')
+    .attr('d', pth).attr('fill', '#ede8df').attr('stroke', '#c5c0b5').attr('stroke-width', 0.4);
+
+  // Base county fills
+  gBase.selectAll('.co').data(mainC).enter().append('path')
+    .attr('d', pth)
+    .attr('fill', f => String(f.id).padStart(5,'0').slice(0,2) === '51' ? '#e6e0d4' : '#d8e6da')
+    .attr('stroke', 'none');
+
+  // Utility overlay (togglable via gUtil.style('display'))
+  mainC.forEach(f => {
+    const fips = String(f.id).padStart(5,'0');
+    const st   = fips.slice(0,2);
+    const util = FU[fips] || (st==='51'?'DOM': st==='24'?'BGE': st==='11'?'PEPCO': null);
+    const uc   = UC[util];
+    if (!uc) return;
+    gUtil.append('path').datum(f).attr('d', pth)
+      .attr('fill', uc.f).attr('opacity', 0.62).attr('stroke', 'none')
+      .style('cursor', 'crosshair')
+      .on('mouseover', e => showUtilTT(e, util))
+      .on('mousemove', e => showUtilTT(e, util))
+      .on('mouseout',  hideTT);
+  });
+
+  // County borders
+  gBord.selectAll('.co-b').data(mainC).enter().append('path')
+    .attr('d', pth).attr('fill', 'none').attr('stroke', '#bfbab2').attr('stroke-width', 0.22);
+
+  // State borders
+  gBord.selectAll('.sb').data(mainS).enter().append('path')
+    .attr('d', pth).attr('fill', 'none').attr('stroke', '#8a8580').attr('stroke-width', 1.1);
+
+  // State labels
+  [{name:'VIRGINIA',lng:-79.6,lat:37.2},{name:'MARYLAND',lng:-77.2,lat:39.56},{name:'D.C.',lng:-77.01,lat:38.88}]
+    .forEach(l => {
+      const [lx, ly] = proj([l.lng, l.lat]);
+      gLbl.append('text').attr('x', lx).attr('y', ly).attr('text-anchor', 'middle')
+        .attr('font-size', 9.5).attr('font-weight', '500').attr('fill', '#7a7570')
+        .attr('letter-spacing', '0.08em').attr('pointer-events', 'none').text(l.name);
+    });
+
+  // Density zones
+  DENSITY.forEach(d => {
+    const [px, py] = proj([d.lng, d.lat]);
+    const dg = gDens.append('g').style('cursor', 'crosshair');
+    dg.append('circle').attr('cx', px).attr('cy', py).attr('r', d.r)
+      .attr('fill', '#b8b3aa').attr('opacity', 0.20)
+      .attr('stroke', '#9a9590').attr('stroke-width', 0.8).attr('stroke-dasharray', '3,2');
+    dg.on('mouseover', e => showDensTT(e, d))
+      .on('mousemove', e => showDensTT(e, d))
+      .on('mouseout',  hideTT);
+  });
+
+  // Established campuses (diamonds)
+  const S = 5.5;
+  ESTABLISHED.forEach(d => {
+    const [px, py] = proj([d.lng, d.lat]);
+    const eg = gEst.append('g').attr('transform', `translate(${px},${py})`).style('cursor', 'crosshair');
+    eg.append('rect').attr('x',-S).attr('y',-S).attr('width',S*2).attr('height',S*2)
+      .attr('transform','rotate(45)').attr('fill','#9a9690').attr('opacity',0.65)
+      .attr('stroke','#6a6660').attr('stroke-width',0.5);
+    eg.on('mouseover', e => showEstTT(e, d))
+      .on('mousemove', e => showEstTT(e, d))
+      .on('mouseout',  hideTT);
+  });
+
+  renderDeals();
+
+}).catch(() => {
+  svg.append('text').attr('x', W/2).attr('y', H/2).attr('text-anchor', 'middle')
+    .attr('font-size', 14).attr('fill', '#6b6963')
+    .text('Map data unavailable. Check your internet connection and reload.');
+});
+</script>
+</body>
+</html>
