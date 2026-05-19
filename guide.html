@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Netzlast — User Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Design tokens (mirrors dashboard) ─────────────────────── */
+:root {
+  --bg:      #f8f6f1;
+  --surface: #ffffff;
+  --raised:  #f2f0eb;
+  --text:    #1a1916;
+  --muted:   #6b6963;
+  --hint:    #9a9690;
+  --border:  rgba(26,25,22,0.12);
+  --edge:    rgba(26,25,22,0.26);
+  --line:    rgba(26,25,22,0.40);
+  --sans:    -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --serif:   'Crimson Pro', Georgia, 'Times New Roman', serif;
+  --mono:    'DM Mono', 'Fira Mono', monospace;
+  --r:       7px;
+  --accent-blue:   #185FA5;
+  --accent-green:  #1D9E75;
+  --accent-orange: #EF9F27;
+  --accent-purple: #534AB7;
+  --accent-red:    #B03A30;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:      #16140e;
+    --surface: #201e18;
+    --raised:  #282520;
+    --text:    #ede9e0;
+    --muted:   #9a9488;
+    --hint:    #6a6660;
+    --border:  rgba(237,233,224,0.11);
+    --edge:    rgba(237,233,224,0.24);
+    --line:    rgba(237,233,224,0.38);
+  }
+}
+
+/* ── Reset ──────────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);font-size:15px;line-height:1.65}
+a{color:var(--accent-blue);text-decoration:none}
+a:hover{text-decoration:underline}
+img,svg{max-width:100%}
+
+/* ── Layout ─────────────────────────────────────────────────── */
+.outer{max-width:780px;margin:0 auto;padding:0 22px 80px}
+
+/* ── Top nav ────────────────────────────────────────────────── */
+.topnav{
+  position:sticky;top:0;z-index:50;
+  background:var(--bg);
+  border-bottom:0.5px solid var(--border);
+  padding:10px 22px;
+  display:flex;align-items:center;gap:12px;
+  font-size:11.5px;color:var(--muted);
+}
+.topnav a{color:var(--muted);border-bottom:0.5px solid var(--edge);padding-bottom:1px}
+.topnav a:hover{color:var(--text);text-decoration:none}
+.topnav-sep{color:var(--border)}
+
+/* ── Header ─────────────────────────────────────────────────── */
+.hero{padding:52px 0 36px;border-bottom:0.5px solid var(--border);margin-bottom:44px}
+.hero-label{
+  font-family:var(--mono);font-size:10px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--hint);margin-bottom:14px;
+  display:flex;align-items:center;gap:8px
+}
+.hero-label::before{content:'';display:block;width:24px;height:0.5px;background:var(--hint)}
+.hero h1{
+  font-family:var(--serif);font-size:38px;font-weight:300;
+  line-height:1.18;color:var(--text);margin-bottom:14px;
+  letter-spacing:-0.01em
+}
+.hero h1 em{font-style:italic;font-weight:300}
+.hero-sub{font-size:15px;color:var(--muted);max-width:560px;line-height:1.6}
+.hero-meta{margin-top:20px;font-size:11.5px;color:var(--hint);display:flex;gap:18px;flex-wrap:wrap}
+.hero-meta a{color:var(--hint);border-bottom:0.5px solid var(--edge)}
+
+/* ── Table of contents ──────────────────────────────────────── */
+.toc{
+  background:var(--raised);border:0.5px solid var(--border);
+  border-radius:var(--r);padding:20px 22px;margin-bottom:44px
+}
+.toc-title{font-family:var(--mono);font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--hint);margin-bottom:12px}
+.toc ol{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:2px 28px}
+@media(max-width:520px){.toc ol{grid-template-columns:1fr}}
+.toc li{font-size:12px;color:var(--muted);padding:3px 0;counter-increment:toc}
+.toc li::before{content:counter(toc,decimal-leading-zero)'. ';color:var(--hint);font-family:var(--mono);font-size:10px}
+.toc a{color:var(--muted)}
+.toc a:hover{color:var(--text);text-decoration:none}
+.toc{counter-reset:toc}
+
+/* ── Section headings ───────────────────────────────────────── */
+.section{margin-bottom:52px}
+.section-number{
+  font-family:var(--mono);font-size:10px;color:var(--hint);
+  letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px
+}
+.section h2{
+  font-family:var(--serif);font-size:26px;font-weight:400;
+  color:var(--text);margin-bottom:18px;line-height:1.25
+}
+.section h3{
+  font-family:var(--serif);font-size:18px;font-weight:400;
+  color:var(--text);margin:28px 0 10px;
+}
+.section p{margin-bottom:12px;color:var(--muted)}
+.section p strong{color:var(--text)}
+.section ul,.section ol{padding-left:18px;margin-bottom:12px}
+.section li{color:var(--muted);margin-bottom:5px}
+.section li strong{color:var(--text)}
+hr.rule{border:none;border-top:0.5px solid var(--border);margin:28px 0}
+
+/* ── Feature cards ──────────────────────────────────────────── */
+.feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:18px 0}
+@media(max-width:520px){.feat-grid{grid-template-columns:1fr}}
+.feat{
+  background:var(--surface);border:0.5px solid var(--border);
+  border-radius:var(--r);padding:14px 16px
+}
+.feat-icon{font-size:16px;margin-bottom:6px}
+.feat-title{font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px}
+.feat-desc{font-size:11.5px;color:var(--muted);line-height:1.5}
+
+/* ── Callout boxes ──────────────────────────────────────────── */
+.callout{
+  border-left:2.5px solid var(--edge);
+  padding:12px 16px;margin:18px 0;
+  background:var(--raised);border-radius:0 var(--r) var(--r) 0
+}
+.callout.tip{border-color:var(--accent-green)}
+.callout.warn{border-color:var(--accent-orange)}
+.callout.info{border-color:var(--accent-blue)}
+.callout-label{font-family:var(--mono);font-size:9px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:5px}
+.callout.tip .callout-label{color:var(--accent-green)}
+.callout.warn .callout-label{color:var(--accent-orange)}
+.callout.info .callout-label{color:var(--accent-blue)}
+.callout p{margin:0;font-size:12.5px;color:var(--muted)}
+.callout p strong{color:var(--text)}
+
+/* ── Marker anatomy diagram ─────────────────────────────────── */
+.diagram-wrap{
+  background:var(--surface);border:0.5px solid var(--border);
+  border-radius:var(--r);padding:22px 28px;margin:18px 0;
+  display:flex;align-items:center;gap:32px;flex-wrap:wrap
+}
+.diagram-svg{flex-shrink:0}
+.diagram-legend{display:flex;flex-direction:column;gap:8px}
+.dl-row{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--muted)}
+.dl-swatch{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* ── Toggle reference ───────────────────────────────────────── */
+.toggle-row{
+  display:flex;align-items:baseline;gap:10px;
+  padding:9px 0;border-bottom:0.5px solid var(--border)
+}
+.toggle-row:first-child{border-top:0.5px solid var(--border)}
+.toggle-btn{
+  font-size:10.5px;padding:2px 8px;border-radius:5px;
+  background:var(--surface);border:0.5px solid var(--edge);
+  color:var(--text);white-space:nowrap;flex-shrink:0
+}
+.toggle-desc{font-size:12px;color:var(--muted)}
+.toggle-desc strong{color:var(--text)}
+
+/* ── Layer line legend ──────────────────────────────────────── */
+.line-legend{display:flex;flex-direction:column;gap:6px;margin:14px 0}
+.ll-row{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted)}
+.ll-line{width:32px;height:2px;flex-shrink:0}
+.ll-label strong{color:var(--text)}
+
+/* ── Glossary table ─────────────────────────────────────────── */
+.gloss-table{width:100%;border-collapse:collapse;margin:14px 0;font-size:12px}
+.gloss-table th{
+  text-align:left;padding:6px 10px 6px 0;
+  font-family:var(--mono);font-size:9px;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--hint);
+  border-bottom:0.5px solid var(--line)
+}
+.gloss-table td{padding:7px 10px 7px 0;color:var(--muted);border-bottom:0.5px solid var(--border);vertical-align:top}
+.gloss-table td:first-child{font-family:var(--mono);font-size:10.5px;color:var(--text);white-space:nowrap}
+.gloss-table td:nth-child(2){color:var(--text);width:32%}
+
+/* ── Type pills ─────────────────────────────────────────────── */
+.type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+@media(max-width:520px){.type-grid{grid-template-columns:1fr}}
+.type-card{
+  border:0.5px solid var(--border);border-radius:var(--r);
+  padding:12px 14px;background:var(--surface)
+}
+.type-dot{
+  width:9px;height:9px;border-radius:50%;
+  display:inline-block;margin-right:6px;flex-shrink:0
+}
+.type-name{font-size:12px;font-weight:600;color:var(--text);margin-bottom:4px;display:flex;align-items:center}
+.type-desc{font-size:11px;color:var(--muted);line-height:1.5}
+.type-example{font-size:10px;color:var(--hint);margin-top:4px;font-style:italic}
+
+/* ── Panel summary cards ────────────────────────────────────── */
+.panel-card{
+  border:0.5px solid var(--border);border-radius:var(--r);
+  padding:16px 18px;margin:10px 0;background:var(--surface);
+  display:grid;grid-template-columns:auto 1fr;gap:14px;align-items:start
+}
+.panel-id{
+  font-family:var(--mono);font-size:13px;font-weight:500;
+  color:var(--hint);padding-top:1px;min-width:20px
+}
+.panel-body-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px}
+.panel-body-desc{font-size:12px;color:var(--muted);line-height:1.5}
+.panel-body-fields{margin-top:6px;font-size:11px;color:var(--hint)}
+
+/* ── Source list ────────────────────────────────────────────── */
+.source-list{list-style:none;padding:0;margin:10px 0}
+.source-list li{
+  padding:7px 0;border-bottom:0.5px solid var(--border);
+  font-size:12px;color:var(--muted);display:flex;gap:10px
+}
+.source-list li:first-child{border-top:0.5px solid var(--border)}
+.source-tag{
+  font-family:var(--mono);font-size:9px;color:var(--hint);
+  white-space:nowrap;padding-top:1px
+}
+
+/* ── Citation box ───────────────────────────────────────────── */
+.citation{
+  background:var(--raised);border:0.5px solid var(--border);
+  border-radius:var(--r);padding:18px 20px;
+  font-family:var(--mono);font-size:11px;color:var(--muted);
+  line-height:1.8;margin-top:16px
+}
+.citation strong{color:var(--text)}
+
+/* ── Footer ─────────────────────────────────────────────────── */
+.page-footer{
+  margin-top:52px;padding-top:18px;
+  border-top:0.5px solid var(--border);
+  font-size:11px;color:var(--hint);line-height:1.7
+}
+.page-footer a{color:var(--hint);border-bottom:0.5px solid var(--edge)}
+</style>
+</head>
+<body>
+
+<!-- ── Sticky nav ─────────────────────────────────────────────────────────── -->
+<nav class="topnav">
+  <a href="index.html">← Dashboard</a>
+  <span class="topnav-sep">|</span>
+  <span>User Guide</span>
+  <span class="topnav-sep">|</span>
+  <a href="https://github.com/david-bieri/netzlast" target="_blank">GitHub ↗</a>
+</nav>
+
+<div class="outer">
+
+<!-- ── Hero ───────────────────────────────────────────────────────────────── -->
+<header class="hero">
+  <div class="hero-label">Netzlast · School of Public and International Affairs, Virginia Tech</div>
+  <h1><em>Data Center Investment:</em><br>Virginia &amp; Maryland<br>— User Guide</h1>
+  <p class="hero-sub">A reference for navigating the interactive policy map, understanding its data model, and interpreting the five analytical panels.</p>
+  <div class="hero-meta">
+    <span>David Bieri · <a href="mailto:bieri@vt.edu">bieri@vt.edu</a></span>
+    <span>Updated May 2026</span>
+    <span><a href="index.html">Open dashboard ↗</a></span>
+  </div>
+</header>
+
+<!-- ── Table of contents ──────────────────────────────────────────────────── -->
+<nav class="toc" aria-label="Table of contents">
+  <div class="toc-title">Contents</div>
+  <ol>
+    <li><a href="#overview">Overview &amp; Research Context</a></li>
+    <li><a href="#map">Navigating the Map</a></li>
+    <li><a href="#markers">Reading Deal Markers</a></li>
+    <li><a href="#layers">Layer Toggles</a></li>
+    <li><a href="#filters">Filters &amp; Controls</a></li>
+    <li><a href="#panels">The Five Data Panels</a></li>
+    <li><a href="#typology">Project Typology</a></li>
+    <li><a href="#grid">Transmission Grid Overlay</a></li>
+    <li><a href="#regulatory">Regulatory Framework &amp; Flashpoint</a></li>
+    <li><a href="#glossary">Data Field Glossary</a></li>
+    <li><a href="#limits">Limitations &amp; Caveats</a></li>
+    <li><a href="#sources">Sources &amp; Methodology</a></li>
+    <li><a href="#cite">Citation</a></li>
+  </ol>
+</nav>
+
+<!-- ── 1. Overview ────────────────────────────────────────────────────────── -->
+<section class="section" id="overview">
+  <div class="section-number">01</div>
+  <h2>Overview &amp; Research Context</h2>
+  <p>This dashboard maps 13 major announced data center deals and approximately 35 established operational campuses across Virginia and Maryland. It overlays utility service territories, PJM transmission infrastructure, and five analytical panels to support research on the grid, fiscal, and governance implications of the data center boom.</p>
+  <p>The central policy question the dashboard is designed to illuminate: <strong>Who pays for AI's power appetite, and under what regulatory arrangements?</strong> Virginia hosts roughly 35% of global data center capacity — earning the designation "first AI resource state" — while simultaneously navigating the contested NextEra–Dominion Energy merger, a $1.9B/yr sales tax exemption under political pressure, and a PJM transmission grid that was not designed for gigawatt-scale point loads.</p>
+  <p>The word <em>Netzlast</em> is German for "grid load" — a nod to the German engineering tradition of treating electrical infrastructure as a public system to be planned, not simply a market to be cleared.</p>
+
+  <div class="callout info">
+    <div class="callout-label">Research affiliation</div>
+    <p>This dashboard supports the research project <strong>"Who Pays for AI's Power Appetite? Virginia as the First AI Resource State"</strong> — School of Public and International Affairs, Virginia Tech. It is not affiliated with or endorsed by any utility, data center operator, or regulatory body.</p>
+  </div>
+</section>
+
+<!-- ── 2. Navigating the Map ──────────────────────────────────────────────── -->
+<section class="section" id="map">
+  <div class="section-number">02</div>
+  <h2>Navigating the Map</h2>
+
+  <div class="feat-grid">
+    <div class="feat">
+      <div class="feat-icon">🖱</div>
+      <div class="feat-title">Pan</div>
+      <div class="feat-desc">Click and drag anywhere on the map to pan. The cursor changes to a grabbing hand while panning.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🔍</div>
+      <div class="feat-title">Zoom</div>
+      <div class="feat-desc">Scroll wheel, trackpad pinch, or use the <strong>+</strong> / <strong>−</strong> buttons in the top-right corner. Zoom range: 1× to 14×.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🖱 click</div>
+      <div class="feat-title">Deal detail</div>
+      <div class="feat-desc">Click any deal marker (filled circle) to open the full detail card below the map with all 12 data fields.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">↩</div>
+      <div class="feat-title">Reset view</div>
+      <div class="feat-desc">The <strong>Reset view</strong> button or <strong>Full view</strong> map overlay button returns to the default full Virginia/Maryland extent.</div>
+    </div>
+  </div>
+
+  <h3>Quick-zoom presets</h3>
+  <p>Three overlay buttons in the bottom-left of the map jump to zoomed views of the most data-dense regions:</p>
+  <ul>
+    <li><strong>DC metro</strong> — Northern Virginia / Ashburn corridor and the Maryland suburbs. Best starting point for examining the NoVA 300+ density zone and the Loudoun transmission cluster.</li>
+    <li><strong>Southside VA</strong> — Berry Hill megasite in Pittsylvania County, the largest single announced project ($100B, GW-scale, served by Appalachian Power/AEP).</li>
+    <li><strong>MD cluster</strong> — Quantum Frederick (Frederick County) and the Brightseat Tech Park (Prince George's County), the two contested Maryland projects.</li>
+  </ul>
+</section>
+
+<!-- ── 3. Reading Deal Markers ────────────────────────────────────────────── -->
+<section class="section" id="markers">
+  <div class="section-number">03</div>
+  <h2>Reading Deal Markers</h2>
+  <p>Each announced deal is represented by a composite marker encoding four independent variables simultaneously. Understanding the encoding unlocks the map's full analytical value.</p>
+
+  <div class="diagram-wrap">
+    <!-- Marker anatomy SVG -->
+    <svg class="diagram-svg" width="160" height="160" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+      <!-- Outer utility ring -->
+      <circle cx="80" cy="80" r="38" fill="none" stroke="#185FA5" stroke-width="3" opacity="0.9"/>
+      <!-- Fill: status color -->
+      <circle cx="80" cy="80" r="30" fill="#1D9E75" opacity="0.88"/>
+      <!-- Upper-right dot: state -->
+      <circle cx="96" cy="64" r="5" fill="#185FA5" opacity="0.9"/>
+      <!-- Lower-left dot: type -->
+      <circle cx="64" cy="96" r="5.5" fill="#B91C1C" opacity="0.92"/>
+      <!-- Arrow annotations -->
+      <line x1="122" y1="48" x2="98" y2="62" stroke="#9a9690" stroke-width="0.8" marker-end="url(#arr)"/>
+      <line x1="40" y1="112" x2="62" y2="98" stroke="#9a9690" stroke-width="0.8" marker-end="url(#arr)"/>
+      <line x1="130" y1="80" x2="120" y2="80" stroke="#9a9690" stroke-width="0.8" marker-end="url(#arr)"/>
+      <line x1="80" y1="138" x2="80" y2="112" stroke="#9a9690" stroke-width="0.8" marker-end="url(#arr)"/>
+      <defs>
+        <marker id="arr" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
+          <path d="M0,0 L5,2.5 L0,5z" fill="#9a9690"/>
+        </marker>
+      </defs>
+      <!-- Labels -->
+      <text x="124" y="44" font-size="9" fill="#6b6963" text-anchor="start">State dot</text>
+      <text x="0" y="116" font-size="9" fill="#6b6963" text-anchor="start">Type dot</text>
+      <text x="132" y="83" font-size="9" fill="#6b6963">Utility ring</text>
+      <text x="80" y="152" font-size="9" fill="#6b6963" text-anchor="middle">Status fill</text>
+      <text x="80" y="76" font-size="8.5" fill="white" text-anchor="middle" font-weight="600">$86B</text>
+      <text x="80" y="86" font-size="7" fill="rgba(255,255,255,0.7)" text-anchor="middle">size ∝ inv.</text>
+    </svg>
+
+    <div class="diagram-legend">
+      <div class="dl-row"><span class="dl-swatch" style="background:none;border:2px solid #185FA5"></span>Outer ring = <strong>utility</strong> (color + dash)</div>
+      <div class="dl-row"><span class="dl-swatch" style="background:#1D9E75"></span>Circle fill = <strong>deal status</strong></div>
+      <div class="dl-row"><span class="dl-swatch" style="background:#185FA5"></span>Upper-right dot = <strong>state</strong> (VA blue, MD green)</div>
+      <div class="dl-row"><span class="dl-swatch" style="background:#B91C1C"></span>Lower-left dot = <strong>project type</strong></div>
+      <div class="dl-row"><span class="dl-swatch" style="background:#ccc;border-radius:0"></span>Circle size = <strong>investment</strong> ($B, √-scaled)</div>
+    </div>
+  </div>
+
+  <h3>Status colors</h3>
+  <ul>
+    <li><strong style="color:#1D9E75">■ Active</strong> — Under development with confirmed commitments or active construction.</li>
+    <li><strong style="color:#888780">■ Dead / halted</strong> — Project withdrawn, rejected, or permanently cancelled (e.g. PW Digital Gateway).</li>
+    <li><strong style="color:#EF9F27">■ Contested / paused</strong> — Has approvals or committed tenants but faces a moratorium, legal challenge, or significant community opposition.</li>
+    <li><strong style="color:#378ADD">■ Announced</strong> — Publicly announced but no construction or binding commitments confirmed.</li>
+  </ul>
+
+  <h3>Utility ring styles</h3>
+  <ul>
+    <li><strong>Dominion Energy</strong> — Solid blue ring. Merger-exposed (NextEra acquisition pending).</li>
+    <li><strong>BGE / Exelon</strong> — Solid purple ring.</li>
+    <li><strong>Pepco / Exelon</strong> — Dashed brown ring.</li>
+    <li><strong>Rappahannock EC (REC)</strong> — Dotted forest-green ring. Cooperative; not Dominion-exposed.</li>
+    <li><strong>Appalachian Power (AEP)</strong> — Short-dashed red ring. Serves Berry Hill (Southside VA).</li>
+  </ul>
+
+  <div class="callout tip">
+    <div class="callout-label">Reading tip</div>
+    <p>Hover over any marker for a summary tooltip. <strong>Click to open the full detail card</strong>, which shows all 12 data fields including cooling type, PUE, grid interconnection status, opposition level, and tax exemption status.</p>
+  </div>
+</section>
+
+<!-- ── 4. Layer Toggles ────────────────────────────────────────────────────── -->
+<section class="section" id="layers">
+  <div class="section-number">04</div>
+  <h2>Layer Toggles</h2>
+  <p>Five toggleable layers control what is drawn on the map. Each button in the toolbar is highlighted when its layer is <strong>on</strong>; click to toggle. Layers can be combined freely.</p>
+
+  <div style="margin:18px 0">
+    <div class="toggle-row">
+      <span class="toggle-btn">▦ Utility areas</span>
+      <span class="toggle-desc"><strong>County-level utility service territories.</strong> Dominion (blue), BGE (purple), Pepco (orange-brown), REC (green), AEP (rose), NOVEC, and Maryland co-ops shown at ~62% opacity. Note that boundaries are approximate county-level assignments; cooperative territories are especially irregular at sub-county scales.</span>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-btn">⬡ Density</span>
+      <span class="toggle-desc"><strong>NoVA 300+ data center cluster zones.</strong> Four amber halo-circles centered on the world's densest concentration of data centers. Circle area is scaled to geographic footprint. Short count labels (e.g. "~4,000 MW · 300+ facilities") appear above each zone. Hover for a full facility-count summary per sub-cluster.</span>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-btn">◇ Established</span>
+      <span class="toggle-desc"><strong>~35 operational campuses</strong> shown as small gray diamonds. A curated sample only — Northern Virginia alone has 600+ total operational data centers. Hover for operator name and approximate capacity in MW.</span>
+    </div>
+    <div class="toggle-row">
+      <span class="toggle-btn">⚡ Grid lines</span>
+      <span class="toggle-desc"><strong>PJM transmission infrastructure</strong> — 500kV and 230kV lines, coded by status. Named substation squares appear at key nodes. Hover any line segment for voltage, status, and the relevant SCC or regulatory case number. See <a href="#grid">Section 8</a> for full details.</span>
+    </div>
+  </div>
+
+  <div class="toggle-row">
+    <span class="toggle-btn">▨ Reg. zones</span>
+    <span class="toggle-desc"><strong>Moratorium &amp; contested zoning overlays.</strong> Three counties shaded when active — Prince George's Co. MD and Montgomery Co. MD (red hatching, active data center moratoria) and Prince William Co. VA (amber, rezoning voided by VA Court of Appeals). Hover for a tooltip describing the specific regulatory status and deal affected.</span>
+  </div>
+  <div class="toggle-row">
+    <span class="toggle-btn">◉ Risk map</span>
+    <span class="toggle-desc"><strong>Regulatory risk choropleth.</strong> Colors each county that contains a deal by the aggregate flashpoint score of the highest-risk deal within it (mint green = low risk, rose = high risk, 0–18 scale). Off by default. Useful overlay when the utility layer is turned off — the two encode complementary information (who serves the county vs. how contested development is). See <a href="#regulatory">Section 9</a> for the full scoring methodology.</span>
+  </div>
+
+  <div class="callout warn">
+    <div class="callout-label">Performance note</div>
+    <p>At very high zoom levels (10×–14×), toggling all layers simultaneously can be slow on older devices. The grid lines layer is the most computationally intensive due to substation label rendering.</p>
+  </div>
+</section>
+
+<!-- ── 5. Filters & Controls ──────────────────────────────────────────────── -->
+<section class="section" id="filters">
+  <div class="section-number">05</div>
+  <h2>Filters &amp; Controls</h2>
+  <p>Four dropdown filters in the toolbar refine which deals appear on the map and in Panels A and B. All filters combine with AND logic — selecting "Active" status and "Dominion" utility shows only active Dominion deals.</p>
+
+  <table class="gloss-table">
+    <thead>
+      <tr><th>Filter</th><th>Options</th><th>What it does</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Deals</td><td>All status / Active / Dead / Contested / Announced</td><td>Filters by deal status; useful for isolating the live pipeline from failed or stalled projects.</td></tr>
+      <tr><td>State</td><td>All / Virginia / Maryland</td><td>Restricts to one jurisdiction; highlights the regulatory contrast (VA DCSA exemption vs. MD framework).</td></tr>
+      <tr><td>Utility</td><td>All / Dominion / BGE / Pepco / REC / AEP</td><td>Isolates deals within a utility's service territory. Filtering by REC shows the two rural Virginia projects explicitly not on Dominion's grid.</td></tr>
+      <tr><td>Type</td><td>All / Hyperscale / AI·GPU / Wholesale colo / Campus / Speculative</td><td>Filters by project typology. Use to compare investment efficiency across ownership models.</td></tr>
+    </tbody>
+  </table>
+
+  <p>Panels A and B update immediately when filters change. Panels C, D, and E always show the full dataset regardless of filter state, as they are designed for cross-sectional comparison.</p>
+
+  <p>The <strong>Reset view</strong> button in the toolbar resets only the map zoom/pan — it does not clear filters.</p>
+</section>
+
+<!-- ── 6. The Five Data Panels ────────────────────────────────────────────── -->
+<section class="section" id="panels">
+  <div class="section-number">06</div>
+  <h2>The Five Data Panels</h2>
+  <p>Below the map, five SVG panels provide analytical views of the dataset. Hover over individual elements for tooltips; click deals in Panels B and C to open the full detail card.</p>
+
+  <div class="panel-card">
+    <div class="panel-id">A</div>
+    <div>
+      <div class="panel-body-title">Announced capacity by utility &amp; project type</div>
+      <div class="panel-body-desc">Horizontal stacked bar chart showing total announced megawatts per utility, segmented by project type. Bars represent active deals only (Dead projects excluded). The Dominion bar dominates at ~7 GW — revealing the scale of merger exposure. The color stack within each bar shows whether that utility's pipeline is hyperscale-, AI-, wholesale-, or campus-driven. Updates in real time when filters change.</div>
+      <div class="panel-body-fields">Axes: utility (y) · MW capacity (x) · type color fill · † = estimated capacity</div>
+    </div>
+  </div>
+
+  <div class="panel-card">
+    <div class="panel-id">B</div>
+    <div>
+      <div class="panel-body-title">Project pipeline — announcement to projected online</div>
+      <div class="panel-body-desc">Gantt-style timeline with one row per deal, sorted by announcement year. Each bar spans from announcement to projected online date. A vertical "Now" marker (2026) shows how much of each bar is elapsed vs. remaining. Darker fill = elapsed time. Contested deals carry a diagonal hatch pattern. Dead deals end in ✕; open-ended projects trail off with →. Updates with filters.</div>
+      <div class="panel-body-fields">x = year · color fill = deal status · type dot = left accent · click to open detail card</div>
+    </div>
+  </div>
+
+  <div class="panel-card">
+    <div class="panel-id">C</div>
+    <div>
+      <div class="panel-body-title">Investment vs. announced capacity — $/MW cost-intensity proxy</div>
+      <div class="panel-body-desc">Scatter plot with investment ($B) on the y-axis and capacity (MW) on the x-axis. Three dashed reference lines at $5M/MW, $15M/MW, and $45M/MW help interpret cost intensity. Points colored by type; dead deals faded; estimated-capacity points show a dashed outer ring. The key insight: AWS and Berry Hill occupy the extreme upper-right (massive both); wholesale developers like CleanArc and PowerHouse 95 sit near the $5M/MW line; hyperscale own-operate tends toward higher $/MW. Always shows full dataset.</div>
+      <div class="panel-body-fields">x = mwNum · y = inv · color = type · dashed ring = mwEst:true</div>
+    </div>
+  </div>
+
+  <div class="panel-card">
+    <div class="panel-id">D</div>
+    <div>
+      <div class="panel-body-title">Fiscal exposure &amp; tax exemption status</div>
+      <div class="panel-body-desc">Sortable table showing all 13 deals with annual tax revenue, estimated $/MW efficiency, and exemption badge. Virginia deals are shown first, sorted by disclosed annual tax revenue. VA DCSA (green badge) = confirmed eligible for Virginia's data center sales &amp; use tax exemption. VA DCSA ⚠ (amber badge) = eligible but at risk of failing the new PUE ≤ 1.2 requirement effective July 2025. MD = Maryland data center incentive framework. N/A = dead or out-of-scope.</div>
+      <div class="panel-body-fields">Fields: d.tx · d.tax_exempt · computed inv/mwNum</div>
+    </div>
+  </div>
+
+  <div class="panel-card">
+    <div class="panel-id">E</div>
+    <div>
+      <div class="panel-body-title">Power Usage Effectiveness (PUE) benchmarks by type</div>
+      <div class="panel-body-desc">One row per project type. Shaded bands show industry-standard PUE ranges for each type based on facility design standards. Only two values are publicly disclosed: AWS (1.15, fleet average 2023) and Google (1.12, global fleet), shown as solid dots within the Hyperscale band. All other types show "not disclosed" within their estimated range. The wholesale/air-cooled band (1.25–1.52) visually demonstrates why the new PUE ≤ 1.2 VA exemption rule creates exposure for STACK-type developers. PUE = 1.0 is the theoretical perfect efficiency.</div>
+      <div class="panel-body-fields">x = PUE value · y = project type · solid dot = disclosed · band = industry estimate</div>
+      <div class="panel-body-fields" style="margin-top:4px">Toggle <em>Show estimated</em> to overlay estimated PUE for deals with known cooling type. A red dashed line at 1.2 marks the VA DCSA exemption threshold.</div>
+    </div>
+  </div>
+
+  <div class="panel-card">
+    <div class="panel-id">F</div>
+    <div>
+      <div class="panel-body-title">Regulatory flashpoint matrix</div>
+      <div class="panel-body-desc">A D3 heatmap of all 13 deals × 6 regulatory dimensions, sorted by aggregate risk score (descending by default). Cell colors: mint (0 = minimal risk) → pale yellow → amber → rose (3 = high). Click any column header to sort by that dimension — clicking "Community" immediately surfaces the three deals with active moratoria. Click a data cell to see the full rubric sentence for that score. The aggregate "Total" column (0–18) is the most useful starting point for comparing overall regulatory exposure.</div>
+      <div class="panel-body-fields">Dimensions: Zoning · Grid · Rate reg. · Environment · Tax · Community · Total</div>
+      <div class="panel-body-fields" style="margin-top:4px">Click any column header to sort. Click a cell to see the rubric. Type dot in row label identifies project type.</div>
+    </div>
+  </div>
+
+  <h3>Interactive controls summary</h3>
+  <table class="gloss-table">
+    <thead><tr><th>Panel</th><th>Control</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td>A</td><td>MW / $B toggle</td><td>Switches x-axis between announced capacity (MW) and total investment ($B).</td></tr>
+      <tr><td>A</td><td>Click utility bar</td><td>Sets the utility filter dropdown and re-renders the map and Panels A &amp; B to show only that utility's deals. Click again to clear.</td></tr>
+      <tr><td>B</td><td>Sort buttons</td><td>Sorts pipeline rows by: Announced year (default) · Projected online · MW · Investment.</td></tr>
+      <tr><td>B</td><td>Zoom presets</td><td>Full (2005–2042) · 2022–32 · 2025–30. Collapses the x-axis to see active construction window in detail.</td></tr>
+      <tr><td>B</td><td>Click bar</td><td>Pans the map to the deal's location at 5× zoom, opens the detail card, and scrolls to the top of the page.</td></tr>
+      <tr><td>C</td><td>Inv vs. MW / $/MW rank</td><td>Swaps scatter axes: standard (x=MW, y=$B) vs. efficiency view (x=$/MW cost intensity, y=MW).</td></tr>
+      <tr><td>D</td><td>Click column header</td><td>Sorts table by that column (click again to reverse). Arrow indicator shows active sort.</td></tr>
+      <tr><td>E</td><td>Show estimated</td><td>Overlays hollow dots for deals with known cooling types, showing inferred PUE position relative to the 1.2 VA DCSA threshold line.</td></tr>
+      <tr><td>F</td><td>Click column header</td><td>Sorts flashpoint rows by that regulatory dimension. Click again to reverse.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── 7. Project Typology ─────────────────────────────────────────────────── -->
+<section class="section" id="typology">
+  <div class="section-number">07</div>
+  <h2>Project Typology</h2>
+  <p>Each deal is classified into one of five mutually exclusive types. The typology is encoded as the lower-left dot on each map marker, the stacked fill in Panel A, and the scatter color in Panel C.</p>
+
+  <div class="type-grid">
+    <div class="type-card">
+      <div class="type-name"><span class="type-dot" style="background:#1E6091"></span>Hyperscale (own-operate)</div>
+      <div class="type-desc">A major cloud provider (AWS, Google, Microsoft) that builds and operates data centers for its own workloads. Characterized by very high investment totals, multi-decade timelines, and direct utility relationships. Tends toward higher $/MW than wholesale builds.</div>
+      <div class="type-example">AWS Northern Virginia, Google Chesterfield</div>
+    </div>
+    <div class="type-card">
+      <div class="type-name"><span class="type-dot" style="background:#B91C1C"></span>AI / GPU cluster</div>
+      <div class="type-desc">Explicitly positioned for AI training and inference workloads requiring very high rack power density (30–100+ kW/rack vs. 5–10 kW legacy). Often wholesale-leased to a hyperscale AI tenant, but distinguished by facility design, cooling architecture, and the scale of the power contingency.</div>
+      <div class="type-example">STACK / Berry Hill, STACK / Stafford Campus</div>
+    </div>
+    <div class="type-card">
+      <div class="type-name"><span class="type-dot" style="background:#16A085"></span>Wholesale colo</div>
+      <div class="type-desc">A developer builds a campus to spec for one or more anchor tenants under long-term wholesale leases. The developer owns the physical infrastructure; the tenant brings the compute load. The most common model in the dataset.</div>
+      <div class="type-example">CleanArc VA1, EdgeCore Louisa, PowerHouse 95, Vantage VA4</div>
+    </div>
+    <div class="type-card">
+      <div class="type-name"><span class="type-dot" style="background:#8E44AD"></span>Multi-developer campus</div>
+      <div class="type-desc">A large multi-building campus developed by a consortium or partnership, with multiple operators and tenants. More complex governance, shared infrastructure, and typically contested permitting given scale. Partnership disputes are common (see Quantum Frederick).</div>
+      <div class="type-example">Quantum Frederick, Brightseat Tech Park</div>
+    </div>
+    <div class="type-card" style="grid-column:1/-1">
+      <div class="type-name"><span class="type-dot" style="background:#78716C"></span>Speculative / no committed tenant</div>
+      <div class="type-desc">Site has been announced or zoned for data center use but has no confirmed anchor tenant, construction start date, or binding power commitment as of May 2026. Capacity estimates are therefore highly uncertain (marked with †).</div>
+      <div class="type-example">Woodlawn / Baltimore Co., Dickerson / Montgomery Co.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ── 8. Transmission Grid Overlay ──────────────────────────────────────── -->
+<section class="section" id="regulatory">
+  <div class="section-number">09</div>
+  <h2>Regulatory Framework &amp; Flashpoint Matrix</h2>
+  <p>The flashpoint matrix (Panel F) scores each deal on six regulatory dimensions on a 0–3 scale, producing an aggregate risk score from 0 (minimal exposure) to 18 (maximum across all dimensions). The framework is designed for comparative policy analysis, not legal risk assessment.</p>
+
+  <h3>Six dimensions</h3>
+  <table class="gloss-table">
+    <thead><tr><th>Dimension</th><th>What it captures</th><th>Key actors</th></tr></thead>
+    <tbody>
+      <tr><td>Zoning</td><td>By-right data center use vs. special use permit required; active moratoria; rezoning voided by courts.</td><td>County planning boards, VA SCC, MD PSC</td></tr>
+      <tr><td>Grid</td><td>PJM interconnection status: signed ESA vs. conditional vs. pending vs. no commitment. Includes Dominion merger exposure.</td><td>Dominion, AEP, REC, PJM, FERC</td></tr>
+      <tr><td>Rate reg.</td><td>Who bears transmission upgrade costs; interruptible service risk; merger-driven rate uncertainty.</td><td>VA SCC (PUR-2025-00043), MD PSC, FERC RM22-14</td></tr>
+      <tr><td>Env.</td><td>Cooling water withdrawal; stormwater; noise; EJ community exposure; brownfield/former fossil-fuel site.</td><td>VA DEQ, MD MDE, county health departments</td></tr>
+      <tr><td>Tax</td><td>VA DCSA eligibility and PUE compliance risk; Maryland incentive stability; moratorium-driven exemption uncertainty.</td><td>VEDP, VA Dept. of Taxation, MD Commerce</td></tr>
+      <tr><td>Community</td><td>Organised opposition: none → low → formal petition → legal challenge or government moratorium.</td><td>County executives, advocacy coalitions, state legislators</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Scoring rubric (0–3 per dimension)</h3>
+  <table class="gloss-table">
+    <thead><tr><th>Dim.</th><th>0 — Minimal</th><th>1 — Low</th><th>2 — Elevated</th><th>3 — High</th></tr></thead>
+    <tbody>
+      <tr><td>Zoning</td><td>By-right, no opposition</td><td>Standard permit, low opposition</td><td>Contested rezoning or petition &gt;1K</td><td>Active moratorium or court-voided</td></tr>
+      <tr><td>Grid</td><td>Signed ESA, operational</td><td>Signed ESA, merger uncertainty</td><td>Conditional or pending</td><td>No commitment; PJM backlog</td></tr>
+      <tr><td>Rate</td><td>Non-Dominion cooperative</td><td>BGE/Pepco (stable)</td><td>Dominion ESA, cost-allocation unclear</td><td>Dominion + merger + contested</td></tr>
+      <tr><td>Env.</td><td>Closed-loop, near-zero WUE</td><td>Standard cooling, established site</td><td>High water use or community concerns</td><td>EJ community + harm or coal-site</td></tr>
+      <tr><td>Tax</td><td>VA DCSA confirmed, PUE compliant</td><td>VA DCSA eligible or MD standard</td><td>VA DCSA at-risk (PUE ≤ 1.2 rule)</td><td>MD moratorium or no path</td></tr>
+      <tr><td>Comm.</td><td>No opposition</td><td>Low, no formal action</td><td>Formal petition (&gt;1,000 sigs)</td><td>Legal challenge or moratorium</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <div class="callout-label">Analytical caution</div>
+    <p>Scores reflect the <strong>highest observed level of risk as of May 2026</strong>, not current trajectory. PW Digital Gateway scores 3/3/3 because its rezoning was court-voided — but it is also dead. Use the Status filter alongside the matrix to distinguish historical from forward-looking exposure.</p>
+  </div>
+</section>
+
+<section class="section" id="grid">
+  <div class="section-number">10</div>
+  <h2>Transmission Grid Overlay</h2>
+  <p>The ⚡ Grid lines layer draws seven transmission line segments and seven named substations. All coordinates are approximate, derived from SCC filings, PSEG MPRP routing documents, and Dominion IRP disclosures.</p>
+
+  <div class="line-legend">
+    <div class="ll-row">
+      <div class="ll-line" style="background:#D97706;height:2.5px"></div>
+      <span class="ll-label"><strong>500kV existing</strong> — solid amber. Core backbone already in service.</span>
+    </div>
+    <div class="ll-row">
+      <div class="ll-line" style="background:#F59E0B;height:2px;background:repeating-linear-gradient(90deg,#F59E0B 0,#F59E0B 5px,transparent 5px,transparent 8px)"></div>
+      <span class="ll-label"><strong>500kV new / under construction</strong> — dashed amber. SCC case approved or filed; construction underway or imminent.</span>
+    </div>
+    <div class="ll-row">
+      <div class="ll-line" style="height:1.5px;background:repeating-linear-gradient(90deg,#3B82F6 0,#3B82F6 5px,transparent 5px,transparent 8px)"></div>
+      <span class="ll-label"><strong>230kV new</strong> — dashed blue. SCC case approved; serving the Stafford data center corridor or Culpeper cluster.</span>
+    </div>
+    <div class="ll-row">
+      <div class="ll-line" style="height:1.5px;background:repeating-linear-gradient(90deg,#FDE68A 0,#FDE68A 8px,transparent 8px,transparent 13px)"></div>
+      <span class="ll-label"><strong>500kV proposed — MPRP</strong> — long-dashed pale yellow. Maryland Piedmont Reliability Project; under MD PSC review (Case 9773).</span>
+    </div>
+    <div class="ll-row">
+      <div class="ll-line" style="background:#D97706;width:10px;height:10px;border-radius:0;flex-shrink:0;width:10px"></div>
+      <span class="ll-label"><strong>Substation square</strong> — filled = existing; outlined = new. Labeled with substation name.</span>
+    </div>
+  </div>
+
+  <h3>The seven lines</h3>
+  <table class="gloss-table">
+    <thead><tr><th>ID</th><th>Line</th><th>Status</th><th>Filing</th></tr></thead>
+    <tbody>
+      <tr><td>g1</td><td>500kV Meadow Brook–Culpeper–Loudoun backbone</td><td>Existing</td><td>—</td></tr>
+      <tr><td>g2</td><td>500kV Loudoun SS–Possum Point (Potomac crossing)</td><td>Existing</td><td>PUR-2020-00080</td></tr>
+      <tr><td>g3</td><td>500kV Golden–Mars–Wishing Star loop, Loudoun</td><td>New</td><td>SCC PUR-2025-00056</td></tr>
+      <tr><td>g4</td><td>500kV Aspen–Golden, Loudoun</td><td>New</td><td>SCC PUR-2024-00032</td></tr>
+      <tr><td>g5</td><td>230kV Stafford / Aquia–Possum Point corridor</td><td>New</td><td>SCC PUR-2024-00142</td></tr>
+      <tr><td>g6</td><td>230kV Culpeper Technology Zone loop</td><td>New</td><td>SCC PUR-2025-00032</td></tr>
+      <tr><td>g7</td><td>MPRP: Doubs SS–Carroll Co.–Baltimore Co. 500kV</td><td>Proposed</td><td>MD PSC Case 9773</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    <div class="callout-label">MPRP context</div>
+    <p>The Maryland Piedmont Reliability Project is a ~70-mile, 500kV line contracted by PJM and assigned to PSEG, running from the Doubs substation in southern Frederick County, MD through Carroll County to northern Baltimore County. It faces opposition from all three counties, the Maryland Farm Bureau, and a Stop MPRP Inc. advocacy coalition. MD PSC procedural hearings run through 2027; projected operation June 2027 if approved. It is <strong>primarily driven by data center load growth</strong> at Quantum Frederick and future Maryland sites.</p>
+  </div>
+</section>
+
+<!-- ── 9. Data Field Glossary ─────────────────────────────────────────────── -->
+<section class="section" id="glossary">
+  <div class="section-number">11</div>
+  <h2>Data Field Glossary</h2>
+  <p>Each deal object contains the following fields. Fields marked <em>computed</em> are derived from other fields at render time; they are not stored in the data but appear in tooltips and panels.</p>
+
+  <table class="gloss-table">
+    <thead><tr><th>Field</th><th>Label</th><th>Description &amp; source</th></tr></thead>
+    <tbody>
+      <tr><td>id</td><td>ID</td><td>Short internal identifier (e.g. "aws", "bh").</td></tr>
+      <tr><td>n</td><td>Name</td><td>Full deal name as used in press coverage and regulatory filings.</td></tr>
+      <tr><td>dv</td><td>Developer</td><td>Lead developer or owner-operator entity.</td></tr>
+      <tr><td>st</td><td>State</td><td>"VA" or "MD".</td></tr>
+      <tr><td>lat / lng</td><td>Coordinates</td><td>Approximate centroid of the project site. Used for map placement only.</td></tr>
+      <tr><td>inv</td><td>Investment ($B)</td><td>Total announced investment in billions of USD. Drives circle size on the map (√-scaled).</td></tr>
+      <tr><td>iL</td><td>Investment label</td><td>Human-readable investment string as reported (e.g. "$86.9B total", "~$1B+").</td></tr>
+      <tr><td>s</td><td>Status</td><td>Active / Dead / Contested / Announced. Drives circle fill color.</td></tr>
+      <tr><td>u</td><td>Utility</td><td>Primary serving utility. Drives outer ring color and filter behavior.</td></tr>
+      <tr><td>reg</td><td>Region</td><td>Broad geographic sub-region (e.g. "N. Virginia", "MD – Frederick").</td></tr>
+      <tr><td>tx</td><td>Annual tax revenue</td><td>Projected or stated annual local/state tax contribution. Highly variable in format; many are "Not public".</td></tr>
+      <tr><td>jo</td><td>FT Jobs</td><td>Announced full-time permanent jobs. Often understated for hyperscale facilities.</td></tr>
+      <tr><td>cp</td><td>Capacity</td><td>Stated power capacity as a string (e.g. "1,800 MW", "Multi-GW (11 DCs)").</td></tr>
+      <tr><td>tl</td><td>Timeline</td><td>Announcement and projected build-out timeline as described in sources.</td></tr>
+      <tr><td>iss</td><td>Key issue</td><td>Primary regulatory, political, or infrastructure risk as of May 2026.</td></tr>
+      <tr><td>typ</td><td>Type</td><td>Project typology: hyperscale / ai-dense / wholesale / campus / speculative.</td></tr>
+      <tr><td>mwNum</td><td>Capacity (MW)</td><td>Numeric capacity in megawatts for chart calculations. Estimated values marked with †.</td></tr>
+      <tr><td>mwEst</td><td>Estimated</td><td>true if mwNum is estimated rather than stated in a public filing or announcement.</td></tr>
+      <tr><td>cooling</td><td>Cooling type</td><td>air / hybrid / liquid / closed-loop / reclaimed. null if undisclosed.</td></tr>
+      <tr><td>pue</td><td>PUE</td><td>Power Usage Effectiveness. Disclosed only for AWS (1.15) and Google (1.12) as of May 2026.</td></tr>
+      <tr><td>substation</td><td>Grid link</td><td>Interconnection status: signed / conditional / pending / partial / na.</td></tr>
+      <tr><td>opposition</td><td>Opposition</td><td>Community/political opposition level: none / low / petition / legal / moratorium.</td></tr>
+      <tr><td>tax_exempt</td><td>Exemption</td><td>Tax exemption status: va (VA DCSA confirmed) / va-risk / md / na.</td></tr>
+      <tr><td>yr_ann</td><td>Year announced</td><td>Year the deal was first publicly announced. Used for Panel B x-axis start.</td></tr>
+      <tr><td>yr_online</td><td>Year online (proj.)</td><td>Projected year of initial operation. null if unknown/TBD.</td></tr>
+      <tr><td>inv_per_mw</td><td>$/MW <em>(computed)</em></td><td>Computed as (inv × 1000) / mwNum, giving millions of dollars per megawatt. Shown in Panel C tooltips and Panel D table.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ── 10. Limitations ────────────────────────────────────────────────────── -->
+<section class="section" id="limits">
+  <div class="section-number">12</div>
+  <h2>Limitations &amp; Caveats</h2>
+  <ul>
+    <li><strong>Utility assignments are county-level approximations.</strong> Cooperative boundaries (REC, NOVEC, SMECO) are especially irregular at sub-county scales. A deal labeled "Dominion" may be within a few miles of a cooperative boundary.</li>
+    <li><strong>Established campus inventory is a curated sample.</strong> Northern Virginia alone has 600+ operational data centers. The ~35 facilities shown are selected for representative coverage of operators and geography, not completeness.</li>
+    <li><strong>Capacity estimates (†) are indicative.</strong> For GW-scale projects with undisclosed final capacity (Berry Hill, AWS multi-GW, Quantum Frederick), mwNum reflects conservative planning estimates derived from public statements and site footprint. They should not be quoted as stated capacity figures.</li>
+    <li><strong>Investment figures mix stages.</strong> Some investments are 30-year totals; others are initial phase commitments. The inv field attempts to capture total announced investment where possible, but comparability across deals is limited.</li>
+    <li><strong>PUE values are sparse.</strong> Only AWS and Google disclose fleet-level PUE. Panel E benchmarks for other types are industry estimates from facility design literature, not measured values.</li>
+    <li><strong>Transmission line coordinates are approximate.</strong> The grid overlay is drawn from SCC case descriptions, county planning documents, and PSEG MPRP routing materials — not from surveyed GIS data.</li>
+    <li><strong>Status reflects May 2026.</strong> This is a fast-moving landscape. The PW Digital Gateway legal outcome, MPRP regulatory timeline, and VA DCSA exemption reform are all in flux. No automated update mechanism exists; the dataset requires manual revision.</li>
+    <li><strong>The dashboard covers announced deals only.</strong> A substantial volume of data center activity occurs through quiet land acquisition, incremental expansions of existing facilities, and undisclosed hyperscale expansions that never appear in press releases.</li>
+  </ul>
+</section>
+
+<!-- ── 11. Sources ─────────────────────────────────────────────────────────── -->
+<section class="section" id="sources">
+  <div class="section-number">13</div>
+  <h2>Sources &amp; Methodology</h2>
+  <p>Deal data was assembled from a combination of local news, trade press, regulatory filings, and company press releases. All data reflects public information available as of May 2026. No non-public information from utility filings, developer documents, or government sources was used.</p>
+
+  <ul class="source-list">
+    <li><span class="source-tag">Local news</span>WSLS (Roanoke), Virginia Business, Virginia Mercury, Baltimore Banner, Maryland Matters, The Daily Record (Baltimore)</li>
+    <li><span class="source-tag">Trade press</span>Data Center Dynamics, Bisnow, Commercial Observer, Data Center Frontier, Inside Climate News</li>
+    <li><span class="source-tag">Economic development</span>Virginia Economic Development Partnership (VEDP); Maryland Commerce; JLARC 2024 data center report; VEDP Biennial DCRSUT Report (Jan 2026)</li>
+    <li><span class="source-tag">Regulatory filings</span>Virginia SCC transmission project register; Maryland PSC Case 9773 (MPRP); Prince George's County planning board records; VA Court of Appeals PW Digital Gateway decision</li>
+    <li><span class="source-tag">Company disclosures</span>EdgeCore press release (Jun 2025); STACK Infrastructure Stafford announcement (Jan 2025); Lerner Enterprises / Brightseat planning submissions; TPG Real Estate / Quantum Frederick filings</li>
+    <li><span class="source-tag">Grid / transmission</span>Dominion Energy 2024 IRP; PJM load forecast 2025; PSEG MPRP routing documents; SCC transmission project register; Dominion Grid Transformation Plan</li>
+    <li><span class="source-tag">Legal / court</span>Compass Datacenters withdrawal (Apr 2026); SEC filings; Prince George's County moratorium executive order (Sep 2025); Quantum Loophole court proceedings (Sep 2024)</li>
+    <li><span class="source-tag">PUE / efficiency</span>AWS sustainability disclosure 2023 (fleet PUE 1.15); Google environmental report (PUE 1.12); STACK Infrastructure cooling white paper; industry benchmarks from Data Center Dynamics and Uptime Institute</li>
+  </ul>
+
+  <h3>Methodology notes</h3>
+  <ul>
+    <li>County FIPS → utility assignments were built from VEDP service territory maps, EIA Form 861 data, and cross-referenced against individual deal announcements where discrepancies existed (notably Berry Hill → AEP, not Dominion).</li>
+    <li>Investment figures for dead projects (PW Digital Gateway) reflect the investment that <em>would have been made</em> if built, as stated in planning documents, not actual expenditure.</li>
+    <li>The Berry Hill ($100B) figure is the 30-year total economic impact as stated by Pittsylvania County officials and STACK Infrastructure; the initial capital commitment tied to the AEP 299 MW contingency is substantially lower.</li>
+    <li>Opposition scores (none / low / petition / legal / moratorium) are assessed against the highest level of organized formal opposition observed as of May 2026, not current trajectory.</li>
+  </ul>
+</section>
+
+<!-- ── 12. Citation ────────────────────────────────────────────────────────── -->
+<section class="section" id="cite">
+  <div class="section-number">14</div>
+  <h2>Citation</h2>
+  <p>If you use data or visualizations from this dashboard in academic, journalistic, or policy work, please cite as:</p>
+  <div class="citation">
+    <strong>Bieri, David</strong> (2026). <em>Data Center Investment: Virginia &amp; Maryland — Interactive Policy Map</em>.<br>
+    School of Public and International Affairs, Virginia Tech. Blacksburg, VA.<br>
+    Available at: <a href="https://david-bieri.github.io/netzlast/" style="color:inherit">https://david-bieri.github.io/netzlast/</a><br>
+    GitHub: <a href="https://github.com/david-bieri/netzlast" style="color:inherit">https://github.com/david-bieri/netzlast</a><br>
+    Contact: <a href="mailto:bieri@vt.edu" style="color:inherit">bieri@vt.edu</a>
+  </div>
+
+  <div class="callout tip" style="margin-top:20px">
+    <div class="callout-label">For journalists and policy analysts</div>
+    <p>For background interviews, data requests, or embargoed access to forthcoming analysis, contact David Bieri at <a href="mailto:bieri@vt.edu">bieri@vt.edu</a>. The underlying data file (<code>index.html</code>) is openly licensed on GitHub.</p>
+  </div>
+</section>
+
+<!-- ── Footer ──────────────────────────────────────────────────────────────── -->
+<footer class="page-footer">
+  <p>David Bieri · Associate Professor of Regional Economics and Economic Geography · School of Public and International Affairs, Virginia Tech ·
+  <a href="mailto:bieri@vt.edu">bieri@vt.edu</a></p>
+  <p style="margin-top:5px">Research: "Who Pays for AI's Power Appetite? Virginia as the First AI Resource State" ·
+  <a href="index.html">Dashboard</a> ·
+  <a href="https://github.com/david-bieri/netzlast" target="_blank">GitHub</a></p>
+</footer>
+
+</div><!-- /outer -->
+</body>
+</html>

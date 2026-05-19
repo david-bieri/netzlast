@@ -76,7 +76,7 @@ a{color:inherit}
 
 /* ── Map wrapper ─────────────────────────────────────────────────────── */
 .mwrap{position:relative;width:100%;border:0.5px solid var(--border);border-radius:var(--r-lg)}
-#msvg{width:100%;height:520px;display:block;cursor:grab;background:var(--map-bg);border-radius:var(--r-lg)}
+#msvg{width:100%;height:520px;display:block;cursor:grab;background:var(--map-bg);border-radius:var(--r-lg);touch-action:none}
 #msvg:active{cursor:grabbing}
 
 /* ── Tooltip ─────────────────────────────────────────────────────────── */
@@ -151,6 +151,95 @@ a{color:inherit}
 
 /* ── Visually hidden (a11y) ──────────────────────────────────────────── */
 .vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+
+/* ── Panel utilities ──────────────────────────────────────────────────────── */
+.panel-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+.panel-scroll::-webkit-scrollbar { height: 4px; }
+.panel-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+.panel-scroll > svg { min-width: 640px; display: block; }
+
+/* ── Responsive breakpoint: tablet / large phone (≤768 px) ───────────────── */
+@media (max-width: 768px) {
+  .page { padding: 20px 14px 52px; }
+  .hdr-left h1 { font-size: 18px; }
+
+  /* Slightly larger touch targets */
+  .ctrl button, .ctrl select {
+    min-height: 28px;
+    padding: 4px 8px;
+    touch-action: manipulation;
+  }
+  .vbtn { padding: 4px 9px; min-height: 26px; touch-action: manipulation; }
+  .zbtn { width: 28px; height: 28px; touch-action: manipulation; }
+}
+
+/* ── Responsive breakpoint: phone portrait (≤ 600 px) ────────────────────── */
+@media (max-width: 600px) {
+  /* Layout */
+  .page { padding: 14px 11px 44px; }
+  .hdr  { flex-direction: column; gap: 8px; margin-bottom: 12px; }
+  .hdr-left h1 { font-size: 17px; line-height: 1.25; }
+  .hdr-right { font-size: 10.5px; text-align: left; }
+
+  /* Map */
+  #msvg  { height: 380px; }
+  .mwrap { border-radius: 8px; }
+
+  /* Controls: hide text labels, make controls full-width rows at separators */
+  .ctrl        { gap: 4px 5px; }
+  .ctrl label  { display: none; }
+  .ctrl button, .ctrl select {
+    font-size: 11.5px;
+    padding: 5px 8px;
+    min-height: 32px;
+    touch-action: manipulation;
+  }
+  /* Separator becomes a full-width flex break so filters/layers split to own rows */
+  .sep { width: 100% !important; height: 0 !important; background: transparent !important; flex-shrink: 0; }
+
+  /* Map overlay & zoom buttons */
+  .vbtn { font-size: 11px; padding: 5px 10px; min-height: 30px; touch-action: manipulation; }
+  .zbtn { width: 32px; height: 32px; font-size: 18px; touch-action: manipulation; }
+
+  /* Legend: two columns */
+  .leg  { gap: 10px 12px; }
+  .lg   { flex: 0 0 calc(50% - 6px); max-width: calc(50% - 6px); }
+
+  /* Detail card */
+  .det { padding: 10px 11px; }
+  .det-hd { flex-wrap: wrap; gap: 6px; }
+
+  /* Panel headers: stack controls below title */
+  .panel-hdr {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
+  }
+  .panel-hdr > span:last-child {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  /* Tax table scroll */
+  #taxTableEl { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  #taxTableEl table { min-width: 540px; }
+
+  /* Footer */
+  .footnote   { font-size: 10px; }
+  .page-footer{ font-size: 10.5px; }
+}
+
+@media (max-width: 380px) {
+  #msvg { height: 320px; }
+  .ctrl button, .ctrl select { font-size: 11px; padding: 4px 6px; }
+  .lg   { flex: 0 0 100%; max-width: 100%; }
+}
 </style>
 </head>
 <body>
@@ -187,12 +276,24 @@ a{color:inherit}
     <option value="BGE">BGE</option>
     <option value="Pepco">Pepco</option>
     <option value="REC">REC</option>
+    <option value="AEP">AEP</option>
+  </select>
+  <select id="ftyp" onchange="upd()">
+    <option value="">All types</option>
+    <option value="hyperscale">Hyperscale</option>
+    <option value="ai-dense">AI / GPU</option>
+    <option value="wholesale">Wholesale colo</option>
+    <option value="campus">Campus</option>
+    <option value="speculative">Speculative</option>
   </select>
   <div class="sep" role="separator"></div>
   <label>Layers:</label>
   <button id="btnUtil" class="on" onclick="toggleLayer('util')">▦ Utility areas</button>
   <button id="btnDens" class="on" onclick="toggleLayer('dens')">⬡ Density</button>
   <button id="btnEst"  class="on" onclick="toggleLayer('est')">◇ Established</button>
+  <button id="btnGrid" class="on" onclick="toggleLayer('grid')">⚡ Grid lines</button>
+  <button id="btnMort" class="on" onclick="toggleLayer('mort')">▨ Reg. zones</button>
+  <button id="btnChoro"        onclick="toggleLayer('choro')">◉ Risk map</button>
   <div class="sep" role="separator"></div>
   <button onclick="rv()">Reset view</button>
 </div>
@@ -236,16 +337,45 @@ a{color:inherit}
     <div class="lr"><span class="lsq" style="background:#DDD8F2;border-color:#534AB7" aria-hidden="true"></span>BGE — Exelon (MD)</div>
     <div class="lr"><span class="lsq" style="background:#F5E8D0;border-color:#854F0B" aria-hidden="true"></span>Pepco — Exelon (MD/DC)</div>
     <div class="lr"><span class="lsq" style="background:#C8EAD8;border-color:#0F6E56" aria-hidden="true"></span>Rappahannock EC (coop.)</div>
-    <div class="lr"><span class="lsq" style="background:#E0DDD8;border-color:#5F5E5A" aria-hidden="true"></span>Appalachian Power (AEP)</div>
+    <div class="lr"><span class="lsq" style="background:#F2D6D0;border-color:#B03A30" aria-hidden="true"></span>Appalachian Power (AEP)</div>
     <div class="lr"><span class="lsq" style="background:#D8E2F2;border-color:#3266ad" aria-hidden="true"></span>NOVEC / other VA coops</div>
     <div class="lr"><span class="lsq" style="background:#EDE8DC;border-color:#888780" aria-hidden="true"></span>Other MD utilities</div>
   </div>
   <div class="lg" role="listitem">
     <p class="lh">Other layers</p>
     <div class="lr"><span class="ldiam" style="background:#9a9690" aria-hidden="true"></span>Established campus (hover)</div>
-    <div class="lr"><span style="width:12px;height:12px;border-radius:50%;background:#b8b3aa;opacity:0.3;border:1px dashed #9a9590;display:inline-block;flex-shrink:0" aria-hidden="true"></span>Density zone (NoVA 300+)</div>
+    <div class="lr"><span style="width:12px;height:12px;border-radius:50%;background:#C47A20;opacity:0.22;border:1.5px dashed #B05F10;display:inline-block;flex-shrink:0" aria-hidden="true"></span>Density zone (NoVA 300+)</div>
     <div class="lr"><span style="width:12px;flex-shrink:0" aria-hidden="true">○</span>Circle size ∝ investment</div>
+    <div class="lr" style="margin-top:5px"><span style="display:inline-block;width:18px;height:3px;background:#D97706;flex-shrink:0;margin-right:2px" aria-hidden="true"></span>500kV existing</div>
+    <div class="lr"><span style="display:inline-block;width:18px;height:3px;background:#F59E0B;border-top:2px dashed #F59E0B;flex-shrink:0;margin-right:2px" aria-hidden="true"></span>500kV new / planned</div>
+    <div class="lr"><span style="display:inline-block;width:18px;height:2px;background:#3B82F6;border-top:1.5px dashed #3B82F6;flex-shrink:0;margin-right:2px" aria-hidden="true"></span>230kV new</div>
+    <div class="lr"><span style="display:inline-block;width:18px;height:2px;background:#FDE68A;border-top:1.5px dashed #FDE68A;flex-shrink:0;margin-right:2px;opacity:0.8" aria-hidden="true"></span>500kV proposed (MPRP)</div>
+    <div class="lr"><span style="display:inline-block;width:7px;height:7px;background:#D97706;flex-shrink:0;margin-right:2px" aria-hidden="true"></span>Substation</div>
+    <div class="lr" style="margin-top:5px"><span style="display:inline-block;width:12px;height:8px;background:#DC2626;opacity:0.18;border:1px dashed #DC2626;flex-shrink:0;margin-right:2px" aria-hidden="true"></span>Data center moratorium</div>
+    <div class="lr"><span style="display:inline-block;width:12px;height:8px;background:#D97706;opacity:0.18;border:1px dashed #D97706;flex-shrink:0;margin-right:2px" aria-hidden="true"></span>Contested zoning</div>
+    <div class="lr" style="margin-top:5px"><span style="display:inline-block;width:24px;height:8px;border-radius:2px;background:linear-gradient(90deg,#D1FAE5,#FECACA);flex-shrink:0;margin-right:2px" aria-hidden="true"></span>◉ Risk score (county)</div>
   </div>
+  <div class="lg" role="listitem">
+    <p class="lh">Project type (● lower-left)</p>
+    <div class="lr"><span class="ldot" style="background:#1E6091" aria-hidden="true"></span>Hyperscale (own-operate)</div>
+    <div class="lr"><span class="ldot" style="background:#B91C1C" aria-hidden="true"></span>AI / GPU cluster</div>
+    <div class="lr"><span class="ldot" style="background:#16A085" aria-hidden="true"></span>Wholesale colo</div>
+    <div class="lr"><span class="ldot" style="background:#8E44AD" aria-hidden="true"></span>Multi-developer campus</div>
+    <div class="lr"><span class="ldot" style="background:#78716C" aria-hidden="true"></span>Speculative / no tenant</div>
+  </div>
+</div>
+
+<!-- ── Capacity panel ── -->
+<div style="margin-top:18px">
+  <div class="panel-hdr" style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">
+    <span style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)" id="capPanelTitle">Announced capacity by utility &amp; project type — active deals only (MW)</span>
+    <span style="display:flex;align-items:center;gap:6px">
+      <span style="font-size:9.5px;color:var(--hint)">† est. · Dead excluded</span>
+      <button id="btnCapMW" class="on" onclick="capMetric='mw';this.classList.add('on');document.getElementById('btnCapInv').classList.remove('on');document.getElementById('capPanelTitle').textContent='Capacity by utility — active deals (MW)';renderCapPanel()" style="font-size:10px;padding:2px 7px;border-radius:5px;border:0.5px solid var(--edge);background:var(--surface);color:var(--text);cursor:pointer">MW</button>
+      <button id="btnCapInv" onclick="capMetric='inv';this.classList.add('on');document.getElementById('btnCapMW').classList.remove('on');document.getElementById('capPanelTitle').textContent='Investment by utility — active deals ($B)';renderCapPanel()" style="font-size:10px;padding:2px 7px;border-radius:5px;border:0.5px solid var(--edge);background:var(--raised);color:var(--muted);cursor:pointer">$B</button>
+    </span>
+  </div>
+  <svg id="capSvg" style="width:100%;overflow:visible" viewBox="0 0 860 175" preserveAspectRatio="xMidYMid meet"></svg>
 </div>
 
 <!-- ── Deal detail card ── -->
@@ -259,12 +389,74 @@ a{color:inherit}
   <p class="det-iss" id="diss"></p>
 </div>
 
+<!-- ── Pipeline panel ── -->
+<div style="margin-top:18px">
+  <div class="panel-hdr" style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">
+    <span style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Project pipeline — announcement to projected online</span>
+    <span style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+      <span style="font-size:9px;color:var(--hint);margin-right:2px">Zoom:</span>
+      <button id="bpy_all" class="on"  onclick="pipeYears=[2005,2042];document.querySelectorAll('[id^=bpy_]').forEach(b=>b.classList.remove('on'));this.classList.add('on');renderPipePanel()" style="font-size:9.5px;padding:1px 6px;border-radius:5px;border:0.5px solid var(--edge);background:var(--surface);color:var(--text);cursor:pointer">Full</button>
+      <button id="bpy_mid"             onclick="pipeYears=[2022,2032];document.querySelectorAll('[id^=bpy_]').forEach(b=>b.classList.remove('on'));this.classList.add('on');renderPipePanel()" style="font-size:9.5px;padding:1px 6px;border-radius:5px;border:0.5px solid var(--edge);background:var(--raised);color:var(--muted);cursor:pointer">2022–32</button>
+      <button id="bpy_hot"             onclick="pipeYears=[2025,2030];document.querySelectorAll('[id^=bpy_]').forEach(b=>b.classList.remove('on'));this.classList.add('on');renderPipePanel()" style="font-size:9.5px;padding:1px 6px;border-radius:5px;border:0.5px solid var(--edge);background:var(--raised);color:var(--muted);cursor:pointer">2025–30</button>
+      <span style="color:var(--border);margin:0 2px">|</span>
+      <span style="font-size:9px;color:var(--hint)">Sort:</span>
+      <button id="bps_ann" class="on"  onclick="pipSort='yr_ann';  document.querySelectorAll('[id^=bps_]').forEach(b=>b.classList.remove('on'));this.classList.add('on');renderPipePanel()" style="font-size:9.5px;padding:1px 6px;border-radius:5px;border:0.5px solid var(--edge);background:var(--surface);color:var(--text);cursor:pointer">Announced</button>
+      <button id="bps_onl"             onclick="pipSort='yr_online';document.querySelectorAll('[id^=bps_]').forEach(b=>b.classList.remove('on'));this.classList.add('on');renderPipePanel()" style="font-size:9.5px;padding:1px 6px;border-radius:5px;border:0.5px solid var(--edge);background:var(--raised);color:var(--muted);cursor:pointer">Online</button>
+      <button id="bps_mw"              onclick="pipSort='mwNum';   document.querySelectorAll('[id^=bps_]').forEach(b=>b.classList.remove('on'));this.classList.add('on');renderPipePanel()" style="font-size:9.5px;padding:1px 6px;border-radius:5px;border:0.5px solid var(--edge);background:var(--raised);color:var(--muted);cursor:pointer">MW</button>
+      <button id="bps_inv"             onclick="pipSort='inv';     document.querySelectorAll('[id^=bps_]').forEach(b=>b.classList.remove('on'));this.classList.add('on');renderPipePanel()" style="font-size:9.5px;padding:1px 6px;border-radius:5px;border:0.5px solid var(--edge);background:var(--raised);color:var(--muted);cursor:pointer">Investment</button>
+    </span>
+  </div>
+  <svg id="pipeSvg" style="width:100%;overflow:visible" viewBox="0 0 860 230" preserveAspectRatio="xMidYMid meet"></svg>
+</div>
+<!-- ── Scatter panel (C) ── -->
+<div style="margin-top:18px">
+  <div class="panel-hdr" style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">
+    <span style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)" id="scatterTitle">Investment vs. capacity — $/MW cost-intensity</span>
+    <span style="display:flex;align-items:center;gap:6px">
+      <span style="font-size:9.5px;color:var(--hint)">† est. · faded = Dead</span>
+      <button id="btnScStd" class="on" onclick="scatterMode='standard'; this.classList.add('on');document.getElementById('btnScEff').classList.remove('on');document.getElementById('scatterTitle').textContent='Investment vs. capacity — $/MW cost-intensity';renderScatterPanel()" style="font-size:10px;padding:2px 7px;border-radius:5px;border:0.5px solid var(--edge);background:var(--surface);color:var(--text);cursor:pointer">Inv vs. MW</button>
+      <button id="btnScEff"           onclick="scatterMode='efficiency';this.classList.add('on');document.getElementById('btnScStd').classList.remove('on');document.getElementById('scatterTitle').textContent='Cost intensity — $/MW vs. capacity rank';renderScatterPanel()" style="font-size:10px;padding:2px 7px;border-radius:5px;border:0.5px solid var(--edge);background:var(--raised);color:var(--muted);cursor:pointer">$/MW rank</button>
+    </span>
+  </div>
+  <svg id="scatterSvg" style="width:100%;overflow:visible" viewBox="0 0 860 195" preserveAspectRatio="xMidYMid meet"></svg>
+</div>
+
+<!-- ── Tax / fiscal panel (D) ── -->
+<div style="margin-top:22px">
+  <div class="panel-hdr" style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">
+    <span style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Fiscal exposure &amp; tax exemption status — all deals</span>
+    <span style="font-size:9.5px;color:var(--hint)">Click column headers to sort · ⚠ = VA DCSA PUE risk (Jul 2025)</span>
+  </div>
+  <div id="taxTableEl" style="overflow-x:auto"></div>
+</div>
+
+<!-- ── PUE panel (E) ── -->
+<div style="margin-top:22px">
+  <div class="panel-hdr" style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">
+    <span style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Power Usage Effectiveness (PUE) — benchmarks by project type</span>
+    <span style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:9.5px;color:var(--hint)">2 disclosed · bands = industry est.</span>
+      <button id="btnPueEst" onclick="showPueEst=!showPueEst;document.getElementById('btnPueEst').classList.toggle('on',showPueEst);renderPuePanel()" style="font-size:10px;padding:2px 7px;border-radius:5px;border:0.5px solid var(--edge);background:var(--raised);color:var(--muted);cursor:pointer">Show estimated</button>
+    </span>
+  </div>
+  <svg id="pueSvg" style="width:100%;overflow:visible" viewBox="0 0 860 108" preserveAspectRatio="xMidYMid meet"></svg>
+</div>
+
+<!-- ── Flashpoint panel (F) ── -->
+<div style="margin-top:22px">
+  <div class="panel-hdr" style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">
+    <span style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Regulatory flashpoint matrix — 6 dimensions × 13 deals</span>
+    <span style="font-size:9.5px;color:var(--hint)">Score: 0 = minimal risk · 3 = high · 18 = maximum · sorted by aggregate</span>
+  </div>
+  <svg id="flashSvg" style="width:100%;overflow:visible" viewBox="0 0 860 288" preserveAspectRatio="xMidYMid meet"></svg>
+</div>
+
 <p class="footnote">Utility service territories are approximate county-level assignments based on primary utility; cooperative boundaries are especially irregular. Established campuses are a curated sample — Northern Virginia alone has 600+ total operational data centers. Sources: WSLS, VEDP, MD Commerce, Data Center Dynamics, Bisnow, Baltimore Banner, Maryland Matters, court filings, SEC filings (May 2026).</p>
 
 <!-- ── Footer ── -->
 <footer class="page-footer">
   <p>David Bieri · School of Public and International Affairs, Virginia Tech ·
-  <a href="mailto:bieri@vt.edu">bieri@vt.edu</a> ·
+  <a href="mailto:dbieri@vt.edu">dbieri@vt.edu</a> ·
   Research: "Who Pays for AI's Power Appetite? Virginia as the First AI Resource State" ·
   <a href="https://github.com/david-bieri/netzlast" target="_blank" rel="noopener">GitHub</a></p>
 </footer>
@@ -278,19 +470,19 @@ a{color:inherit}
 <script>
 /* ── Data ──────────────────────────────────────────────────────────── */
 const DEALS = [
-  {id:"bh",   n:"STACK / Berry Hill",           dv:"STACK Infrastructure",                   st:"VA", lat:36.78, lng:-79.47, inv:100,   iL:"$100B",        s:"Active",    u:"Dominion", reg:"Southside VA",    tx:"$48.5M+/yr",            jo:"2,500 FT",        cp:"TBA (GW-scale)",      tl:"30 yrs (2026–2056)",          iss:"Tax exemption risk; Dominion merger; groundwater concerns"},
-  {id:"pwdg", n:"PW Digital Gateway",           dv:"QTS (Blackstone) + Compass (Brookfield)", st:"VA", lat:38.82, lng:-77.66, inv:24.7,  iL:"~$24.7B",      s:"Dead",      u:"Dominion", reg:"N. Virginia",     tx:"$400M (proj.)",          jo:"Thousands (proj.)", cp:"~3,000 MW+",          tl:"Never built",                 iss:"VA Court of Appeals voided rezoning; Manassas battlefield; Compass withdrew Apr 2026; $1.7M county legal fees"},
-  {id:"aws",  n:"AWS / Northern Virginia",       dv:"Amazon Web Services",                    st:"VA", lat:39.04, lng:-77.49, inv:86.9,  iL:"$86.9B total", s:"Active",    u:"Dominion", reg:"N. Virginia",     tx:"$334M/yr",               jo:"8,710 FT direct",  cp:"Multi-GW (50+ DCs)",  tl:"2006–2040",                   iss:"Multi-county complexity; rural expansion opposition; $140M MEI grant tied to GA"},
-  {id:"goog", n:"Google / Chesterfield",         dv:"Google (Alphabet)",                      st:"VA", lat:37.37, lng:-77.57, inv:9,     iL:"~$9B",         s:"Active",    u:"Dominion", reg:"Central VA",      tx:"Not public",             jo:"Several hundred",  cp:"300 MW+",             tl:"Multi-phase to ~2030",        iss:"Grid capacity; Dominion merger alters infrastructure planning"},
-  {id:"ca",   n:"CleanArc VA1 / Caroline Co.",   dv:"CleanArc Data Centers",                  st:"VA", lat:37.88, lng:-77.28, inv:3,     iL:"$3B",          s:"Active",    u:"REC",      reg:"Rural VA",        tx:"Largest in co. history", jo:"Not public",       cp:"900 MW",              tl:"Phase 1 Q1 2027",             iss:"On REC grid — insulated from Dominion merger; REC headroom at 900 MW scale"},
-  {id:"stst", n:"STACK / Stafford Campus",       dv:"STACK Infrastructure",                   st:"VA", lat:38.39, lng:-77.36, inv:0,     iL:"Not disclosed",s:"Active",    u:"Dominion", reg:"N. Virginia",     tx:"Not public",             jo:"Not public",       cp:"1,800 MW",            tl:"1st bldg near complete",      iss:"NoVA grid congestion; 6 substation commitments under merger uncertainty"},
-  {id:"ph95", n:"PowerHouse 95 / Spotsylvania",  dv:"PowerHouse + Harrison Street",           st:"VA", lat:38.20, lng:-77.63, inv:1,     iL:"~$1B+",        s:"Active",    u:"Dominion", reg:"N. Virginia",     tx:"Not public",             jo:"Not public",       cp:"800 MW",              tl:"Active; 150 MW online Oct 2025",iss:"Dominion capex timing contingent on new ownership decisions"},
-  {id:"va4",  n:"Vantage VA4 / Stafford",        dv:"Vantage Data Centers",                   st:"VA", lat:38.46, lng:-77.42, inv:2,     iL:"$2B",          s:"Active",    u:"Dominion", reg:"N. Virginia",     tx:"Not public",             jo:"Not public",       cp:"~200 MW",             tl:"First bldg late 2027",        iss:"Grid congestion; substation delay risk post-merger"},
-  {id:"ec",   n:"EdgeCore / Louisa Co.",         dv:"EdgeCore Digital Infrastructure",         st:"VA", lat:37.97, lng:-77.93, inv:0.042, iL:"$42M (land)",  s:"Announced", u:"REC",      reg:"Rural VA",        tx:"Not public",             jo:"Not public",       cp:"1,100 MW",            tl:"Announced June 2025",         iss:"Not on Dominion grid; REC headroom uncertain at 1.1 GW scale"},
-  {id:"qf",   n:"Quantum Frederick",             dv:"TPG Real Estate + Rowan + Aligned",       st:"MD", lat:39.32, lng:-77.45, inv:5,     iL:"$5B (campus)", s:"Active",    u:"BGE",      reg:"MD – Frederick",  tx:"$215M/yr (proj.)",       jo:"4,200 FTE (peak)", cp:"Multi-GW (11 DCs)",   tl:"Active; full build ~2036",    iss:"Partner dispute (Quantum Loophole removed Dec 2025); MPRP transmission backlash"},
-  {id:"bs",   n:"Brightseat Tech Park (Landover)",dv:"Lerner Enterprises + Tower Cos.",        st:"MD", lat:38.93, lng:-76.88, inv:5,     iL:"$5B",          s:"Contested", u:"Pepco",    reg:"MD – PG County",  tx:"$13.7M/yr (proj.)",      jo:"Not public",       cp:"820 MW",              tl:"Approved 2024; moratorium Jan 2026",iss:"23K-petition opposition; environmental justice (63% Black community); county moratorium"},
-  {id:"wl",   n:"Woodlawn / Baltimore Co.",      dv:"Security Land & Development LP",          st:"MD", lat:39.37, lng:-76.74, inv:0,     iL:"Not disclosed",s:"Announced", u:"BGE",      reg:"MD – Baltimore",  tx:"Not public",             jo:"Not public",       cp:"150 MW",              tl:"Construction planned mid-2026",iss:"Limited public process; no statewide PSC certificate required"},
-  {id:"dk",   n:"Dickerson / Montgomery Co.",    dv:"Undisclosed",                             st:"MD", lat:39.20, lng:-77.36, inv:0,     iL:"Not disclosed",s:"Contested", u:"Pepco",    reg:"MD – Montgomery", tx:"Not public",             jo:"Not public",       cp:"TBA",                 tl:"Permitting; county moratorium through 2026",iss:"Former Pepco coal plant; county moratorium; 80% self-generation requirement proposed"}
+  {id:"bh",   n:"STACK / Berry Hill",            dv:"STACK Infrastructure",                    st:"VA", lat:36.78, lng:-79.47, inv:100,   iL:"$100B",        s:"Active",    u:"AEP",     reg:"Southside VA",    tx:"$48.5M+/yr",            jo:"2,500 FT",        cp:"TBA (GW-scale)",      tl:"30 yrs (2026–2056)",            iss:"AEP 299 MW contingency by 2028; tax exemption risk; groundwater concerns",                                                                  typ:"ai-dense",    mwNum:2000, mwEst:true,  cooling:"hybrid",      pue:null, substation:"conditional", opposition:"low",       tax_exempt:"va-risk", yr_ann:2026, yr_online:2035},
+  {id:"pwdg", n:"PW Digital Gateway",            dv:"QTS (Blackstone) + Compass (Brookfield)", st:"VA", lat:38.82, lng:-77.66, inv:24.7,  iL:"~$24.7B",      s:"Dead",      u:"Dominion", reg:"N. Virginia",     tx:"$400M (proj.)",          jo:"Thousands (proj.)", cp:"~3,000 MW+",          tl:"Never built",                   iss:"VA Court of Appeals voided rezoning; Manassas battlefield; Compass withdrew Apr 2026; $1.7M county legal fees",                         typ:"wholesale",   mwNum:3000, mwEst:false, cooling:null,          pue:null, substation:"na",          opposition:"legal",     tax_exempt:"na", yr_ann:2022, yr_online:null},
+  {id:"aws",  n:"AWS / Northern Virginia",        dv:"Amazon Web Services",                     st:"VA", lat:39.04, lng:-77.49, inv:86.9,  iL:"$86.9B total", s:"Active",    u:"Dominion", reg:"N. Virginia",     tx:"$334M/yr",               jo:"8,710 FT direct",  cp:"Multi-GW (50+ DCs)",  tl:"2006–2040",                     iss:"Multi-county complexity; rural expansion opposition; $140M MEI grant tied to GA",                                                        typ:"hyperscale",  mwNum:2000, mwEst:true,  cooling:"hybrid",      pue:1.15, substation:"signed",      opposition:"low",       tax_exempt:"va", yr_ann:2006, yr_online:2040},
+  {id:"goog", n:"Google / Chesterfield",          dv:"Google (Alphabet)",                       st:"VA", lat:37.37, lng:-77.57, inv:9,     iL:"~$9B",         s:"Active",    u:"Dominion", reg:"Central VA",      tx:"Not public",             jo:"Several hundred",  cp:"300 MW+",             tl:"Multi-phase to ~2030",          iss:"Grid capacity; Dominion merger alters infrastructure planning",                                                                          typ:"hyperscale",  mwNum:300,  mwEst:false, cooling:"hybrid",      pue:1.12, substation:"signed",      opposition:"low",       tax_exempt:"va", yr_ann:2021, yr_online:2028},
+  {id:"ca",   n:"CleanArc VA1 / Caroline Co.",    dv:"CleanArc Data Centers",                   st:"VA", lat:37.88, lng:-77.28, inv:3,     iL:"$3B",          s:"Active",    u:"REC",      reg:"Rural VA",        tx:"Largest in co. history", jo:"Not public",       cp:"900 MW",              tl:"Phase 1 Q1 2027",               iss:"On REC grid — insulated from Dominion merger; REC headroom at 900 MW scale",                                                             typ:"wholesale",   mwNum:900,  mwEst:false, cooling:null,          pue:null, substation:"pending",     opposition:"none",      tax_exempt:"va", yr_ann:2024, yr_online:2027},
+  {id:"stst", n:"STACK / Stafford Campus",        dv:"STACK Infrastructure",                    st:"VA", lat:38.39, lng:-77.36, inv:0,     iL:"Not disclosed",s:"Active",    u:"Dominion", reg:"N. Virginia",     tx:"Not public",             jo:"Not public",       cp:"1,800 MW",            tl:"1st bldg near complete",        iss:"NoVA grid congestion; 6 substation commitments under merger uncertainty",                                                                 typ:"ai-dense",    mwNum:1800, mwEst:false, cooling:"reclaimed",   pue:null, substation:"signed",      opposition:"low",       tax_exempt:"va-risk", yr_ann:2025, yr_online:2027},
+  {id:"ph95", n:"PowerHouse 95 / Spotsylvania",   dv:"PowerHouse + Harrison Street",            st:"VA", lat:38.20, lng:-77.63, inv:1,     iL:"~$1B+",        s:"Active",    u:"Dominion", reg:"N. Virginia",     tx:"Not public",             jo:"Not public",       cp:"800 MW",              tl:"Active; 150 MW online Oct 2025",iss:"Dominion capex timing contingent on new ownership decisions",                                                                            typ:"wholesale",   mwNum:800,  mwEst:false, cooling:null,          pue:null, substation:"signed",      opposition:"none",      tax_exempt:"va", yr_ann:2023, yr_online:2025},
+  {id:"va4",  n:"Vantage VA4 / Stafford",         dv:"Vantage Data Centers",                    st:"VA", lat:38.46, lng:-77.42, inv:2,     iL:"$2B",          s:"Active",    u:"Dominion", reg:"N. Virginia",     tx:"Not public",             jo:"Not public",       cp:"~200 MW",             tl:"First bldg late 2027",          iss:"Grid congestion; substation delay risk post-merger",                                                                                     typ:"wholesale",   mwNum:200,  mwEst:false, cooling:null,          pue:null, substation:"signed",      opposition:"none",      tax_exempt:"va", yr_ann:2024, yr_online:2027},
+  {id:"ec",   n:"EdgeCore / Louisa Co.",          dv:"EdgeCore Digital Infrastructure",          st:"VA", lat:37.97, lng:-77.93, inv:17,    iL:"$17B+",        s:"Announced", u:"REC",      reg:"Rural VA",        tx:"Not public",             jo:"Not public",       cp:"1,100 MW",            tl:"Announced June 2025",           iss:"Not on Dominion grid; REC headroom uncertain at 1.1 GW scale; no tenant disclosed",                                                      typ:"wholesale",   mwNum:1100, mwEst:false, cooling:"closed-loop", pue:null, substation:"pending",     opposition:"none",      tax_exempt:"va", yr_ann:2025, yr_online:2028},
+  {id:"qf",   n:"Quantum Frederick",              dv:"TPG Real Estate + Rowan + Aligned",        st:"MD", lat:39.32, lng:-77.45, inv:5,     iL:"$5B (campus)", s:"Active",    u:"BGE",      reg:"MD – Frederick",  tx:"$215M/yr (proj.)",       jo:"4,200 FTE (peak)", cp:"Multi-GW (11 DCs)",   tl:"Active; full build ~2036",      iss:"Partner dispute (Quantum Loophole removed Dec 2025); MPRP transmission backlash",                                                        typ:"campus",      mwNum:2400, mwEst:true,  cooling:"hybrid",      pue:null, substation:"signed",      opposition:"petition",  tax_exempt:"md", yr_ann:2021, yr_online:2036},
+  {id:"bs",   n:"Brightseat Tech Park (Landover)",dv:"Lerner Enterprises + Tower Cos.",         st:"MD", lat:38.93, lng:-76.88, inv:5,     iL:"$5B",          s:"Contested", u:"Pepco",    reg:"MD – PG County",  tx:"$13.7M/yr (proj.)",      jo:"Not public",       cp:"820 MW",              tl:"Approved 2024; moratorium Jan 2026",iss:"23K-signature petition; environmental justice (63% Black community); county moratorium Sep 2025",                                        typ:"campus",      mwNum:820,  mwEst:false, cooling:null,          pue:null, substation:"pending",     opposition:"moratorium",tax_exempt:"md", yr_ann:2023, yr_online:2027},
+  {id:"wl",   n:"Woodlawn / Baltimore Co.",        dv:"Security Land & Development LP",          st:"MD", lat:39.37, lng:-76.74, inv:0,     iL:"Not disclosed",s:"Announced", u:"BGE",      reg:"MD – Baltimore",  tx:"Not public",             jo:"Not public",       cp:"150 MW",              tl:"Construction planned mid-2026", iss:"Limited public process; MPRP transmission project needed; no statewide PSC certificate required",                                       typ:"speculative", mwNum:150,  mwEst:false, cooling:null,          pue:null, substation:"pending",     opposition:"low",       tax_exempt:"md", yr_ann:2025, yr_online:2027},
+  {id:"dk",   n:"Dickerson / Montgomery Co.",      dv:"Undisclosed",                             st:"MD", lat:39.20, lng:-77.36, inv:0,     iL:"Not disclosed",s:"Contested", u:"Pepco",    reg:"MD – Montgomery", tx:"Not public",             jo:"Not public",       cp:"TBA",                 tl:"Permitting; county moratorium through 2026",iss:"Former Pepco coal plant; county moratorium; 80% self-generation requirement proposed",                                       typ:"speculative", mwNum:300,  mwEst:true,  cooling:null,          pue:null, substation:"pending",     opposition:"moratorium",tax_exempt:"md", yr_ann:2024, yr_online:null}
 ];
 
 const ESTABLISHED = [
@@ -331,10 +523,10 @@ const ESTABLISHED = [
 ];
 
 const DENSITY = [
-  {n:"Ashburn / Data Center Alley",     cnt:"148+ named facilities in Ashburn alone; 300+ in Loudoun County; ~4,000 MW commissioned. The world's largest data center cluster.",lat:39.036,lng:-77.488,r:16},
-  {n:"Sterling / Dulles Corridor",      cnt:"89+ facilities. Major operators: QTS, CyrusOne, Vantage, Microsoft. Adjacent to Ashburn ecosystem.",lat:39.008,lng:-77.430,r:10},
-  {n:"Manassas / Prince William Cluster",cnt:"96+ facilities. Anchored by Iron Mountain (142 acres), CloudHQ campus, AWS, Microsoft.",lat:38.750,lng:-77.492,r:9},
-  {n:"Reston / Chantilly / Herndon",    cnt:"129+ facilities across Fairfax County. CoreSite, Equinix, Digital Realty. Older market, tighter grid.",lat:38.920,lng:-77.408,r:10}
+  {n:"Ashburn / Data Center Alley",      cnt:"148+ named facilities in Ashburn alone; 300+ in Loudoun County; ~4,000 MW commissioned. The world's largest data center cluster.", lat:39.036,lng:-77.488,r:42,tag:"~4,000 MW · 300+ facilities"},
+  {n:"Sterling / Dulles Corridor",       cnt:"89+ facilities. Major operators: QTS, CyrusOne, Vantage, Microsoft. Adjacent to Ashburn ecosystem.",                               lat:39.008,lng:-77.430,r:27,tag:"89+ facilities"},
+  {n:"Manassas / Prince William Cluster",cnt:"96+ facilities. Anchored by Iron Mountain (142 acres), CloudHQ campus, AWS, Microsoft.",                                           lat:38.750,lng:-77.492,r:26,tag:"96+ facilities"},
+  {n:"Reston / Chantilly / Herndon",     cnt:"129+ facilities across Fairfax County. CoreSite, Equinix, Digital Realty. Older market, tighter grid.",                           lat:38.920,lng:-77.408,r:29,tag:"129+ facilities"}
 ];
 
 // County FIPS → primary utility
@@ -375,34 +567,192 @@ const UC = {
   BGE:   {f:'#DDD8F2',s:'#534AB7',lbl:'BGE / Baltimore Gas & Electric (Exelon)'},
   PEPCO: {f:'#F5E8D0',s:'#854F0B',lbl:'Pepco / Potomac Electric (Exelon)'},
   REC:   {f:'#C8EAD8',s:'#0F6E56',lbl:'Rappahannock Electric Cooperative'},
-  AEP:   {f:'#E0DDD8',s:'#5F5E5A',lbl:'Appalachian Power (AEP)'},
+  AEP:   {f:'#F2D6D0',s:'#B03A30',lbl:'Appalachian Power (AEP)'},
   NOVEC: {f:'#D8E2F2',s:'#3266ad',lbl:'NOVEC / Northern Virginia Electric Cooperative'},
   SMECO: {f:'#F0E8D8',s:'#888780',lbl:'SMECO (Southern Maryland Electric Cooperative)'},
   PEMD:  {f:'#E8E6E0',s:'#888780',lbl:'Potomac Edison / FirstEnergy (western MD)'},
   DELM:  {f:'#EAE6E0',s:'#888780',lbl:'Delmarva Power / Exelon (Eastern Shore MD)'}
 };
 
+
+/* ── Project typology ────────────────────────────────────────────────── */
+const TYPES = {
+  'hyperscale': {lbl:'Hyperscale (own-operate)', short:'HS', c:'#1E6091'},
+  'ai-dense':   {lbl:'AI / GPU cluster',          short:'AI', c:'#B91C1C'},
+  'wholesale':  {lbl:'Wholesale colo',             short:'WC', c:'#16A085'},
+  'campus':     {lbl:'Multi-developer campus',     short:'MC', c:'#8E44AD'},
+  'speculative':{lbl:'Speculative / no tenant',   short:'SP', c:'#78716C'},
+};
+
+
+/* ── Transmission grid data ─────────────────────────────────────────── */
+// Coordinates are approximate; based on SCC filings, PSEG MPRP docs, Dominion IRP
+const GRID_LINES = [
+  // 500kV EXISTING ──────────────────────────────────────────────────────────
+  {id:'g1',
+   name:'500kV backbone: Meadow Brook–Culpeper–Fauquier–Loudoun SS',
+   note:'Primary NoVA load supply corridor. Loudoun SS serves ~30% of all NoVA load.',
+   kv:500, status:'existing', scc:null,
+   coords:[[39.12,-78.12],[38.82,-78.05],[38.48,-77.97],[38.66,-77.72],[38.73,-77.48],[39.05,-77.55]]},
+
+  {id:'g2',
+   name:'500kV: Loudoun SS – Possum Point (Potomac River crossing)',
+   note:'Key south-to-north corridor feeding Stafford/NoVA data center cluster. Possum Point SS is the principal 500kV node in Prince William County.',
+   kv:500, status:'existing', scc:'PUR-2020-00080',
+   coords:[[39.05,-77.55],[38.82,-77.40],[38.54,-77.27]]},
+
+  // 500kV NEW / UNDER CONSTRUCTION ──────────────────────────────────────────
+  {id:'g3',
+   name:'500kV: Golden–Mars–Wishing Star loop (Loudoun, PUR-2025-00056)',
+   note:'New substations built specifically for data center load in eastern Loudoun. Community opposition in Loudoun Valley Estates; SCC case active.',
+   kv:500, status:'new', scc:'PUR-2025-00056',
+   coords:[[39.10,-77.59],[39.04,-77.56],[38.97,-77.57],[38.91,-77.57]]},
+
+  {id:'g4',
+   name:'500kV: Aspen–Golden (Loudoun, PUR-2024-00032)',
+   note:'New Aspen 500/230kV substation with Goose Creek and Golden tie lines; designed to relieve eastern Loudoun overloads.',
+   kv:500, status:'new', scc:'PUR-2024-00032',
+   coords:[[39.09,-77.64],[39.05,-77.55],[39.02,-77.50]]},
+
+  // 230kV NEW / UNDER CONSTRUCTION ──────────────────────────────────────────
+  {id:'g5',
+   name:'230kV: Stafford / Aquia–Possum Point corridor (PUR-2024-00142)',
+   note:'Rebuilt corridor serving STACK Stafford (1,800 MW campus, 6 substations) and PowerHouse 95/Vantage along I-95.',
+   kv:230, status:'new', scc:'PUR-2024-00142',
+   coords:[[38.30,-77.47],[38.39,-77.37],[38.47,-77.29],[38.54,-77.27]]},
+
+  {id:'g6',
+   name:'230kV: Culpeper Technology Zone loop (PUR-2025-00032)',
+   note:'New 230kV infrastructure ring serving the emerging Culpeper/Route 29 data center corridor.',
+   kv:230, status:'new', scc:'PUR-2025-00032',
+   coords:[[38.47,-78.01],[38.50,-77.93],[38.47,-77.87],[38.44,-77.93],[38.47,-78.01]]},
+
+  // 500kV PROPOSED ──────────────────────────────────────────────────────────
+  {id:'g7',
+   name:'MPRP: Doubs SS–Carroll Co.–Baltimore Co. 500kV (PSEG/PJM, MD PSC Case 9773)',
+   note:'~70-mile proposed line from Doubs SS (Frederick Co., MD) to northern Baltimore Co. Faces opposition from Frederick, Carroll and Baltimore counties. Required to serve Quantum Frederick and MD data center growth.',
+   kv:500, status:'proposed', scc:'MD PSC 9773',
+   coords:[[39.38,-77.47],[39.44,-77.25],[39.56,-77.01],[39.60,-76.80],[39.65,-76.68]]}
+];
+
+const SUBSTATIONS = [
+  {name:'Loudoun SS',        lat:39.050, lng:-77.548, kv:500, status:'existing'},
+  {name:'Meadow Brook SS',   lat:39.120, lng:-78.118, kv:500, status:'existing'},
+  {name:'Possum Point SS',   lat:38.542, lng:-77.265, kv:500, status:'existing'},
+  {name:'Doubs SS',          lat:39.382, lng:-77.470, kv:500, status:'existing'},
+  {name:'Golden SS',         lat:39.042, lng:-77.563, kv:500, status:'new'},
+  {name:'Mars SS',           lat:38.968, lng:-77.572, kv:500, status:'new'},
+  {name:'Aspen SS',          lat:39.088, lng:-77.638, kv:500, status:'new'},
+];
+
+const GC = {
+  500: {existing:'#D97706', new:'#F59E0B', proposed:'#FDE68A'},
+  230: {existing:'#1D4ED8', new:'#3B82F6'},
+};
+
+
+/* ── Regulatory flashpoint data ─────────────────────────────────────────── */
+// Scores: [land, grid, rate, env, fiscal, comm] — 0=low, 3=high risk
+// Rubric and rationale in user guide Section 8
+const REGSCORE = {
+  bh:   [1, 2, 2, 2, 2, 1],   // Berry Hill: AEP contingency, groundwater, air cooling PUE risk
+  pwdg: [3, 3, 3, 1, 0, 3],   // PW Digital: court-voided, no ESA, dead
+  aws:  [0, 0, 2, 1, 0, 1],   // AWS: signed ESAs, Dominion merger exposure, rural opposition
+  goog: [0, 0, 2, 1, 0, 1],   // Google: same Dominion exposure, lower opposition
+  ca:   [0, 1, 0, 1, 0, 0],   // CleanArc: REC grid, standard site, low risk
+  stst: [1, 1, 3, 1, 2, 1],   // STACK Stafford: 6 substations, merger, air-cooled PUE risk
+  ph95: [0, 0, 2, 1, 0, 0],   // PowerHouse 95: partial online, Dominion cost uncertainty
+  va4:  [0, 1, 2, 1, 0, 0],   // Vantage: pending substations, Dominion merger
+  ec:   [0, 1, 0, 0, 0, 0],   // EdgeCore: REC grid, closed-loop, minimal risk
+  qf:   [2, 1, 1, 1, 1, 2],   // Quantum Frederick: partner dispute, MPRP opposition
+  bs:   [3, 2, 1, 2, 2, 3],   // Brightseat: moratorium, EJ community, 23K petition
+  wl:   [1, 2, 1, 1, 1, 1],   // Woodlawn: MPRP dependency, limited public process
+  dk:   [3, 2, 1, 2, 2, 3],   // Dickerson: moratorium, former coal, 80% self-gen proposal
+};
+
+const REG_DIMS = [
+  {id:'land',   lbl:'Zoning',    full:'Land-use / Zoning'},
+  {id:'grid',   lbl:'Grid',      full:'Grid / Interconnection'},
+  {id:'rate',   lbl:'Rate reg.', full:'Utility Rate Regulation'},
+  {id:'env',    lbl:'Env.',      full:'Environmental / Water'},
+  {id:'fiscal', lbl:'Tax',       full:'Fiscal / Tax Exposure'},
+  {id:'comm',   lbl:'Community', full:'Community / Political'},
+];
+
+const REG_RUBRIC = {
+  land:  ['By-right, no opposition','Standard permitting, low opposition','Contested rezoning or active petition (>1K sigs)','Active moratorium or court-voided rezoning'],
+  grid:  ['Signed ESA, fully operational','Signed ESA, Dominion merger uncertainty','Conditional commitment or pending interconnection','No interconnection commitment; PJM queue backlog'],
+  rate:  ['Non-Dominion cooperative — no merger risk','BGE/Pepco/Exelon — stable regulatory oversight','Dominion ESA; transmission cost-allocation unclear','Dominion + merger + contested ratepayer cost recovery'],
+  env:   ['Closed-loop cooling, near-zero water withdrawal','Standard cooling, established site, no complaints','High water use, groundwater concerns, or noise issues','EJ community + documented harm, or former fossil-fuel site'],
+  fiscal:['VA DCSA confirmed; PUE compliant with Jul 2025 rule','VA DCSA eligible (standard) or MD incentive (stable)','VA DCSA at-risk: cooling likely fails PUE ≤ 1.2 rule','MD moratorium risk, or no viable exemption pathway'],
+  comm:  ['No organised opposition','Low concern, no formal action taken','Formal petition (>1,000 sigs) or organised opposition','Active legal challenge, court proceeding, or gov. moratorium'],
+};
+
+// Estimated PUE midpoints by cooling type (industry benchmarks)
+const PUE_EST = {air:1.40, hybrid:1.15, reclaimed:1.38, 'closed-loop':1.26};
+
+// Counties with active data center moratoria or contested zoning
+const MORT_COUNTIES = {
+  '24033': {status:'moratorium', col:'#DC2626',
+            note:"Prince George's Co. MD — County Executive executive order Sep 2025; task force review ongoing; Brightseat Tech Park in limbo."},
+  '24031': {status:'moratorium', col:'#DC2626',
+            note:'Montgomery Co. MD — moratorium through 2026; Dickerson project (former Pepco coal plant) halted; 80% self-generation proposal tabled.'},
+  '51153': {status:'contested',  col:'#D97706',
+            note:'Prince William Co. VA — 2022 data center rezoning voided by VA Court of Appeals (PW Digital Gateway case). By-right protections tightened.'},
+};
+
+
+/* ── Regulatory choropleth (county FIPS → max deal risk total 0–18) ─────── */
+const CHORO = {
+  '51143':10,  // Pittsylvania — Berry Hill (AEP conditional, groundwater)
+  '51153':13,  // Prince William — PW Digital Gateway (court-voided)
+  '51107': 4,  // Loudoun — AWS NoVA
+  '51041': 4,  // Chesterfield — Google
+  '51033': 2,  // Caroline — CleanArc VA1
+  '51179': 9,  // Stafford — STACK Stafford (highest of Stafford deals)
+  '51177': 3,  // Spotsylvania — PowerHouse 95
+  '51113': 1,  // Louisa — EdgeCore
+  '24021': 8,  // Frederick Co. MD — Quantum Frederick
+  '24033':13,  // Prince George's Co. MD — Brightseat
+  '24005': 7,  // Baltimore Co. MD — Woodlawn
+  '24031':13,  // Montgomery Co. MD — Dickerson
+};
+// Color scale: mint (low risk) → rose (high risk)
+const choroColor = t => d3.interpolateRgb('#D1FAE5','#FECACA')(Math.min(t,13)/13);
+
 const SC  = {Active:'#1D9E75',Dead:'#888780',Contested:'#EF9F27',Announced:'#378ADD'};
 const SBCLS = {Active:'b-active',Dead:'b-dead',Contested:'b-contested',Announced:'b-announced'};
-const UR  = {Dominion:{c:'#185FA5',d:''},BGE:{c:'#534AB7',d:''},Pepco:{c:'#854F0B',d:'5,3'},REC:{c:'#0F6E56',d:'2,3'}};
+const UR  = {Dominion:{c:'#185FA5',d:''},BGE:{c:'#534AB7',d:''},Pepco:{c:'#854F0B',d:'5,3'},REC:{c:'#0F6E56',d:'2,3'},AEP:{c:'#B03A30',d:'3,2'}};
 const gr  = iv => Math.max(4.5, Math.sqrt(iv || 0) * 3.2);
 
 /* ── Layer state ─────────────────────────────────────────────────────── */
-const LY = {util:true, dens:true, est:true};
+const LY = {util:true, dens:true, est:true, grid:true, mort:true, choro:false};
+let showPueEst = false;
+let capMetric    = 'mw';
+let pipSort      = 'yr_ann';
+let pipeYears    = [2005, 2042];
+let taxCol       = 'tx';
+let taxAsc       = false;
+let scatterMode  = 'standard';  // 'standard' | 'efficiency'
+let flashSortDim = 'total';
+let flashSortAsc = false;
 function toggleLayer(k) {
   LY[k] = !LY[k];
   document.getElementById('btn' + k.charAt(0).toUpperCase() + k.slice(1))
           .classList.toggle('on', LY[k]);
-  ({util:gUtil, dens:gDens, est:gEst})[k].style('display', LY[k] ? null : 'none');
+  ({util:gUtil, dens:gDens, est:gEst, grid:gGrid, mort:gMort, choro:gChoro})[k].style('display', LY[k] ? null : 'none');
 }
 
 /* ── SVG setup ───────────────────────────────────────────────────────── */
 const W = 900, H = 520;
 const svg   = d3.select('#msvg').attr('viewBox', `0 0 ${W} ${H}`).attr('preserveAspectRatio', 'xMidYMid meet');
 const gAll  = svg.append('g');
-const gBase = gAll.append('g');
+const gBase  = gAll.append('g');
+const gChoro = gAll.append('g');
+const gMort  = gAll.append('g');
 const gUtil = gAll.append('g');
 const gBord = gAll.append('g');
+const gGrid = gAll.append('g');
 const gLbl  = gAll.append('g');
 const gDens = gAll.append('g');
 const gEst  = gAll.append('g');
@@ -431,15 +781,25 @@ function posTT(e) {
   ttEl.style.top  = Math.max(0, my > H * 0.65 ? my - 160 : my - 8) + 'px';
 }
 const hideTT = () => ttEl.style.display = 'none';
+function panToMap(d) {
+  const [cx, cy] = proj([d.lng, d.lat]);
+  svg.transition().duration(600).call(zm.transform,
+    d3.zoomIdentity.translate(W/2, H/2).scale(5).translate(-cx, -cy));
+  showDetail(d);
+  window.scrollTo({top: 0, behavior: 'smooth'});
+}
 
 function showDealTT(e, d) {
+  const tc = TYPES[d.typ] || {};
   posTT(e); ttEl.style.display = 'block';
   ttEl.innerHTML = `<p class="tt-n">${d.n}</p>
+    <div class="tt-r"><span class="tt-l">Type</span><span class="tt-v" style="color:${tc.c||'inherit'}">${tc.lbl||d.typ}</span></div>
     <div class="tt-r"><span class="tt-l">Developer</span><span class="tt-v" style="font-size:10px">${d.dv}</span></div>
     <div class="tt-r"><span class="tt-l">Investment</span><span class="tt-v">${d.iL}</span></div>
     <div class="tt-r"><span class="tt-l">Capacity</span><span class="tt-v">${d.cp}</span></div>
     <div class="tt-r"><span class="tt-l">Utility</span><span class="tt-v">${d.u}</span></div>
     <div class="tt-r"><span class="tt-l">Status</span><span class="tt-v"><span class="badge ${SBCLS[d.s]}">${d.s}</span></span></div>
+    <div class="tt-r"><span class="tt-l">Opposition</span><span class="tt-v">${{none:'None',low:'Low',petition:'Petition',legal:'Legal challenge',moratorium:'Moratorium'}[d.opposition]||'—'}</span></div>
     <p class="tt-hint">Click for full details</p>`;
 }
 function showEstTT(e, d) {
@@ -462,14 +822,47 @@ function showUtilTT(e, util) {
   ttEl.innerHTML = `<p class="tt-n">${uc.lbl}</p>
     <span class="tt-tag" style="background:#F1EFE8;color:#5F5E5A">Utility service territory (approximate)</span>`;
 }
+function showFlashTT(e, deal, dim, score) {
+  posTT(e); ttEl.style.display = 'block';
+  const rub = REG_RUBRIC[dim.id];
+  const cols = ['var(--text)','#854F0B','#D97706','#DC2626'];
+  ttEl.innerHTML = `<p class="tt-n">${deal.n}</p>
+    <div class="tt-r"><span class="tt-l">${dim.full}</span><span class="tt-v" style="color:${cols[score]}">${score} / 3</span></div>
+    <p style="font-size:10.5px;color:var(--muted);margin:5px 0 0;line-height:1.4">${rub[score]}</p>`;
+}
+function showMortTT(e, mc) {
+  posTT(e); ttEl.style.display='block';
+  const typ = mc.status==='moratorium'?'Data center moratorium active':'Contested / restricted zoning';
+  const bg  = mc.status==='moratorium'?'#FEE2E2':'#FEF3C7';
+  const fc  = mc.status==='moratorium'?'#B91C1C':'#854F0B';
+  ttEl.innerHTML = `<p class="tt-n">${typ}</p>
+    <p style="font-size:11px;color:var(--muted);margin:5px 0;line-height:1.45">${mc.note}</p>
+    <span class="tt-tag" style="background:${bg};color:${fc}">${mc.status==='moratorium'?'Moratorium':'Contested zoning'}</span>`;
+}
+function showGridTT(e, line) {
+  const sl = {existing:'Existing',new:'New / under construction',proposed:'Proposed (contested)'};
+  posTT(e); ttEl.style.display = 'block';
+  ttEl.innerHTML = `<p class="tt-n">${line.name}</p>
+    <div class="tt-r"><span class="tt-l">Voltage</span><span class="tt-v">${line.kv} kV</span></div>
+    <div class="tt-r"><span class="tt-l">Status</span><span class="tt-v">${sl[line.status]||line.status}</span></div>
+    ${line.scc ? `<div class="tt-r"><span class="tt-l">Filing</span><span class="tt-v" style="font-size:10px">${line.scc}</span></div>` : ''}
+    <p style="font-size:10.5px;color:var(--muted);margin:5px 0 0;line-height:1.4">${line.note}</p>`;
+}
 
 /* ── Deal detail card ────────────────────────────────────────────────── */
 function showDetail(d) {
+  const tc = TYPES[d.typ] || {};
   document.getElementById('dnm').textContent = d.n;
   document.getElementById('dgr').innerHTML = [
     {l:'Region',   v:d.reg}, {l:'Investment', v:d.iL}, {l:'Capacity', v:d.cp},
     {l:'Timeline', v:d.tl},  {l:'FT Jobs',    v:d.jo}, {l:'Annual tax',v:d.tx},
-    {l:'Utility',  v:d.u},   {l:'Status',     v:`<span class="badge ${SBCLS[d.s]}">${d.s}</span>`}
+    {l:'Utility',  v:d.u},   {l:'Type',       v:`<span style="color:${tc.c||'inherit'};font-weight:600">${tc.lbl||d.typ}</span>`},
+    {l:'Status',   v:`<span class="badge ${SBCLS[d.s]}">${d.s}</span>`},
+    {l:'Cooling',  v: d.cooling ? ({air:'Air-cooled',hybrid:'Hybrid (air+liquid)',liquid:'Liquid','closed-loop':'Closed-loop chilled water',reclaimed:'Reclaimed water + air'}[d.cooling]||d.cooling) : 'Not disclosed'},
+    {l:'PUE',      v: d.pue ? d.pue.toFixed(2) : 'Not disclosed'},
+    {l:'Grid link',v: ({signed:'Signed / active',conditional:'Conditional',pending:'Pending',partial:'Partial (phase 1)',na:'N/A (dead)'}[d.substation]||d.substation||'Unknown')},
+    {l:'Opposition',v:({none:'None',low:'Low',petition:'Petition filed',legal:'Legal challenge',moratorium:'Moratorium'}[d.opposition]||d.opposition||'Unknown')},
+    {l:'Tax exempt',v:({va:'VA DCSA ✓','va-risk':'VA DCSA (PUE risk)',md:'MD framework',na:'N/A'}[d.tax_exempt]||d.tax_exempt||'—')}
   ].map(x => `<div class="dc"><p class="dl">${x.l}</p><p class="dv">${x.v}</p></div>`).join('');
   document.getElementById('diss').innerHTML = '<strong>Key issue:</strong> ' + d.iss;
   const det = document.getElementById('det');
@@ -481,10 +874,11 @@ function showDetail(d) {
 /* ── Deal filter & render ────────────────────────────────────────────── */
 let fp = [...DEALS];
 function upd() {
-  const fs  = document.getElementById('fs').value;
-  const fst = document.getElementById('fst').value;
-  const fu  = document.getElementById('fu').value;
-  fp = DEALS.filter(d => (!fs || d.s === fs) && (!fst || d.st === fst) && (!fu || d.u.includes(fu)));
+  const fs   = document.getElementById('fs').value;
+  const fst  = document.getElementById('fst').value;
+  const fu   = document.getElementById('fu').value;
+  const ftyp = document.getElementById('ftyp').value;
+  fp = DEALS.filter(d => (!fs || d.s === fs) && (!fst || d.st === fst) && (!fu || d.u.includes(fu)) && (!ftyp || d.typ === ftyp));
   renderDeals();
 }
 
@@ -496,7 +890,11 @@ function renderDeals() {
     const mg = gDeals.append('g').attr('transform', `translate(${px},${py})`).style('cursor', 'pointer');
     mg.append('circle').attr('r', r+2.8).attr('fill', 'none').attr('stroke', ur.c).attr('stroke-width', 2).attr('stroke-dasharray', ur.d || 'none').attr('opacity', 0.88);
     mg.append('circle').attr('r', r).attr('fill', SC[d.s] || '#888').attr('opacity', 0.88);
-    mg.append('circle').attr('r', 2.5).attr('cx', r*0.5).attr('cy', -r*0.5).attr('fill', d.st === 'VA' ? '#185FA5' : '#3B6D11').attr('opacity', 0.9);
+    // State dot (upper-right)
+    mg.append('circle').attr('r', 2.2).attr('cx', r*0.52).attr('cy', -r*0.52).attr('fill', d.st === 'VA' ? '#185FA5' : '#3B6D11').attr('opacity', 0.88);
+    // Type dot (lower-left)
+    const tc = TYPES[d.typ] || TYPES['wholesale'];
+    mg.append('circle').attr('r', 2.5).attr('cx', -r*0.52).attr('cy', r*0.52).attr('fill', tc.c).attr('opacity', 0.92);
     if (r >= 14) {
       mg.append('text').attr('text-anchor', 'middle').attr('dy', '0.35em').attr('font-size', 8.5).attr('font-weight', '500').attr('fill', 'white').attr('pointer-events', 'none')
         .text(d.inv >= 10 ? d.iL.replace('$','').replace(' total','') : '');
@@ -506,6 +904,684 @@ function renderDeals() {
       .on('mouseout',  hideTT)
       .on('click',     () => { hideTT(); showDetail(d); });
   });
+  renderCapPanel();
+  renderPipePanel();
+}
+
+
+/* ── Capacity panel (Panel A) ───────────────────────────────────────── */
+function renderCapPanel() {
+  const cpSvg = d3.select('#capSvg');
+  cpSvg.selectAll('*').remove();
+
+  const PW = 860, PH = 175;
+  const ml = 82, mr = 10, mt = 8, mb = 26;
+  const cw = PW - ml - mr, ch = PH - mt - mb;
+
+  const typKeys = Object.keys(TYPES);
+  const active  = fp.filter(d => d.s !== 'Dead');
+  const useInv  = capMetric === 'inv';
+
+  const utilOrder = ['DOM','REC','BGE','PEPCO','AEP'];
+  const rows = utilOrder.map(u => {
+    const obj = {u, total:0};
+    typKeys.forEach(t => {
+      const sum = useInv
+        ? d3.sum(active.filter(d => d.u === u && d.typ === t), d => d.inv || 0)
+        : d3.sum(active.filter(d => d.u === u && d.typ === t), d => d.mwNum || 0);
+      obj[t] = sum; obj.total += sum;
+    });
+    return obj;
+  }).filter(r => r.total > 0).sort((a,b) => b.total - a.total);
+
+  const g = cpSvg.append('g').attr('transform', `translate(${ml},${mt})`);
+
+  if (!rows.length) {
+    g.append('text').attr('x', cw/2).attr('y', ch/2).attr('text-anchor','middle')
+      .attr('font-size', 11).attr('fill','var(--muted)').text('No active deals match current filters');
+    return;
+  }
+
+  const xMax = d3.max(rows, r => r.total);
+  const x = d3.scaleLinear().domain([0, xMax * 1.04]).range([0, cw]);
+  const y = d3.scaleBand().domain(rows.map(r => r.u)).range([0, ch]).padding(0.30);
+
+  // Subtle grid lines
+  x.ticks(5).forEach(v => {
+    g.append('line').attr('x1',x(v)).attr('y1',0).attr('x2',x(v)).attr('y2',ch)
+      .attr('stroke','var(--border)').attr('stroke-width',0.5);
+  });
+
+  // Stacked bars
+  const stacked = d3.stack().keys(typKeys)(rows);
+  stacked.forEach(layer => {
+    const tc = TYPES[layer.key];
+    layer.forEach(seg => {
+      if ((seg[1] - seg[0]) < 1) return;
+      g.append('rect')
+        .attr('x', x(seg[0])).attr('y', y(seg.data.u))
+        .attr('width', Math.max(0, x(seg[1]) - x(seg[0])))
+        .attr('height', y.bandwidth())
+        .attr('fill', tc.c).attr('opacity', 0.78).attr('rx', 2);
+    });
+  });
+
+  // Utility labels (left)
+  const uLbl = {DOM:'Dominion', REC:'REC', BGE:'BGE', PEPCO:'Pepco'};
+  rows.forEach(r => {
+    g.append('text').attr('x',-6).attr('y', y(r.u) + y.bandwidth()/2)
+      .attr('text-anchor','end').attr('dominant-baseline','middle')
+      .attr('font-size',10.5).attr('font-weight','500').attr('fill','var(--muted)')
+      .text(uLbl[r.u] || r.u);
+    // Total label at bar end
+    const lbl = useInv
+      ? (r.total >= 1 ? '$'+r.total.toFixed(1)+'B' : '$'+Math.round(r.total*1000)+'M')
+      : (r.total >= 1000 ? (r.total/1000).toFixed(1)+' GW' : r.total+' MW');
+    const hasEst = !useInv && active.some(d => d.u === r.u && d.mwEst);
+    g.append('text').attr('x', x(r.total)+5).attr('y', y(r.u) + y.bandwidth()/2)
+      .attr('dominant-baseline','middle').attr('font-size',9.5).attr('fill','var(--hint)')
+      .text(lbl + (hasEst ? ' †' : ''));
+    // Click-to-filter: click bar to set utility filter
+    const uMap = {DOM:'Dominion',REC:'REC',BGE:'BGE',PEPCO:'Pepco',AEP:'AEP'};
+    g.append('rect').attr('x',0).attr('y',y(r.u)).attr('width',Math.max(x(r.total)+4,20)).attr('height',y.bandwidth())
+      .attr('fill','transparent').style('cursor','pointer')
+      .attr('title','Filter map to '+r.u)
+      .on('click', () => {
+        const el = document.getElementById('fu');
+        if (!el) return;
+        el.value = (el.value === (uMap[r.u]||'')) ? '' : (uMap[r.u]||'');
+        upd();
+      })
+      .on('mouseover', e => {
+        const cur = document.getElementById('fu');
+        const lbl2 = (uMap[r.u]||r.u);
+        const active = cur && cur.value === (uMap[r.u]||'');
+        posTT(e); ttEl.style.display='block';
+        ttEl.innerHTML=`<p class="tt-n">${lbl2}</p><p style="font-size:11px;color:var(--muted)">${active?'Click to clear filter':'Click to filter map to '+lbl2+' deals'}</p>`;
+      })
+      .on('mousemove', e => posTT(e))
+      .on('mouseout',  hideTT);
+  });
+
+  // X-axis
+  g.append('g').attr('transform',`translate(0,${ch})`).call(
+    d3.axisBottom(x).ticks(5).tickSize(3)
+      .tickFormat(v => useInv ? (v>0?'$'+v+'B':'') : (v >= 1000 ? (v/1000).toFixed(0)+' GW' : v ? v+' MW' : ''))
+  ).call(a => a.select('.domain').attr('stroke','var(--border)'))
+   .call(a => a.selectAll('.tick line').attr('stroke','var(--border)'))
+   .call(a => a.selectAll('text').attr('font-size',8.5).attr('fill','var(--hint)'));
+
+  // Inline type colour key (bottom strip)
+  const visTypes = typKeys.filter(t => rows.some(r => r[t] > 0));
+  const kw = cw / visTypes.length;
+  visTypes.forEach((t, i) => {
+    const tc = TYPES[t];
+    const kx = i * kw;
+    g.append('rect').attr('x', kx).attr('y', ch + 16).attr('width', 8).attr('height', 8)
+      .attr('rx',1).attr('fill', tc.c).attr('opacity',0.78);
+    g.append('text').attr('x', kx+11).attr('y', ch+21)
+      .attr('dominant-baseline','middle').attr('font-size',8.5).attr('fill','var(--muted)')
+      .text(tc.lbl);
+  });
+}
+
+
+/* ── Pipeline panel (Panel B) ──────────────────────────────────────────── */
+function renderPipePanel() {
+  const svg = d3.select('#pipeSvg');
+  svg.selectAll('*').remove();
+
+  const PW = 860, PH = 230;
+  const ml = 162, mr = 38, mt = 6, mb = 22;
+  const cw = PW - ml - mr, ch = PH - mt - mb;
+
+  const NOW = 2026;
+  const xMin = pipeYears[0], xMax = pipeYears[1];
+
+  const x = d3.scaleLinear().domain([xMin, xMax]).range([0, cw]);
+  const rowH = Math.floor(ch / DEALS.length);
+  const barH = Math.max(7, rowH - 4);
+
+  const g = svg.append('g').attr('transform', `translate(${ml},${mt})`);
+
+  // Year grid lines
+  d3.range(2006, xMax, 2).forEach(yr => {
+    g.append('line')
+     .attr('x1', x(yr)).attr('y1', 0).attr('x2', x(yr)).attr('y2', ch)
+     .attr('stroke', yr % 4 === 2 ? 'var(--border)' : 'var(--raised)')
+     .attr('stroke-width', 0.5);
+  });
+
+  // "Now" marker
+  g.append('line')
+   .attr('x1', x(NOW)).attr('y1', 0).attr('x2', x(NOW)).attr('y2', ch)
+   .attr('stroke', 'var(--edge)').attr('stroke-width', 1).attr('stroke-dasharray', '3,2');
+  g.append('text').attr('x', x(NOW)+2).attr('y', -2)
+   .attr('font-size', 7.5).attr('fill', 'var(--hint)').text('Now');
+
+  // Rows — sorted by yr_ann
+  const pipSortFns = {
+    yr_ann:  (a,b) => a.yr_ann - b.yr_ann,
+    yr_online:(a,b)=> (a.yr_online||9999) - (b.yr_online||9999),
+    mwNum:   (a,b) => b.mwNum - a.mwNum,
+    inv:     (a,b) => b.inv   - a.inv,
+  };
+  const sorted = [...DEALS].sort(pipSortFns[pipSort] || pipSortFns.yr_ann);
+
+  sorted.forEach((d, i) => {
+    const y0 = i * rowH + (rowH - barH) / 2;
+    const tc = TYPES[d.typ] || {};
+    const sc = SC[d.s] || '#888';
+    const x0 = x(d.yr_ann);
+    const x1 = d.yr_online ? x(Math.min(d.yr_online, xMax)) : x(Math.min(NOW + 3, xMax));
+    const w  = Math.max(x1 - x0, 3);
+    const isDead = d.s === 'Dead';
+    const isOpen = !d.yr_online;
+
+    // Deal name label
+    g.append('text').attr('x', -4).attr('y', y0 + barH/2)
+     .attr('text-anchor', 'end').attr('dominant-baseline', 'middle')
+     .attr('font-size', 8.5).attr('fill', isDead ? 'var(--hint)' : 'var(--muted)')
+     .attr('font-style', isDead ? 'italic' : 'normal')
+     .text(d.n.length > 22 ? d.n.slice(0, 21) + '…' : d.n);
+
+    // Bar background (announced → online or open-ended)
+    g.append('rect')
+     .attr('x', x0).attr('y', y0).attr('width', w).attr('height', barH)
+     .attr('fill', isDead ? 'var(--raised)' : sc)
+     .attr('opacity', isDead ? 0.5 : 0.22).attr('rx', 2);
+
+    // Status fill (announced → now if active, or full range)
+    if (!isDead && d.yr_ann <= NOW) {
+      const fillW = Math.max(x(Math.min(NOW, d.yr_online||NOW+1)) - x0, 2);
+      g.append('rect')
+       .attr('x', x0).attr('y', y0).attr('width', fillW).attr('height', barH)
+       .attr('fill', sc).attr('opacity', 0.65).attr('rx', 2);
+    }
+
+    // Type color left accent
+    g.append('rect')
+     .attr('x', x0).attr('y', y0).attr('width', 3).attr('height', barH)
+     .attr('fill', tc.c || '#888').attr('opacity', 0.9).attr('rx', 1);
+
+    // Dead X or open arrow
+    if (isDead) {
+      g.append('text').attr('x', x0 + w + 3).attr('y', y0 + barH/2)
+       .attr('dominant-baseline', 'middle').attr('font-size', 9)
+       .attr('fill', 'var(--hint)').text('✕');
+    } else if (isOpen) {
+      g.append('text').attr('x', x0 + w + 2).attr('y', y0 + barH/2)
+       .attr('dominant-baseline', 'middle').attr('font-size', 9)
+       .attr('fill', sc).attr('opacity', 0.7).text('→');
+    }
+
+    // Contested/moratorium hatch overlay
+    if (d.s === 'Contested' || d.opposition === 'moratorium') {
+      for (let hx = x0; hx < x0 + w; hx += 5) {
+        g.append('line').attr('x1', hx).attr('y1', y0).attr('x2', hx+3).attr('y2', y0+barH)
+         .attr('stroke', 'var(--surface)').attr('stroke-width', 1.5).attr('opacity', 0.5)
+         .attr('pointer-events', 'none');
+      }
+    }
+
+    // Interactive overlay
+    g.append('rect')
+     .attr('x', x0).attr('y', y0).attr('width', Math.max(w, 14)).attr('height', barH)
+     .attr('fill', 'transparent').style('cursor', 'pointer')
+     .on('mouseover', e => {
+       const sc_lbl = ({signed:'Signed',conditional:'Conditional',pending:'Pending',na:'N/A'}[d.substation])||'—';
+       posTT(e); ttEl.style.display = 'block';
+       ttEl.innerHTML = `<p class="tt-n">${d.n}</p>
+         <div class="tt-r"><span class="tt-l">Announced</span><span class="tt-v">${d.yr_ann}</span></div>
+         <div class="tt-r"><span class="tt-l">Online (proj.)</span><span class="tt-v">${d.yr_online||'TBD'}</span></div>
+         <div class="tt-r"><span class="tt-l">Capacity</span><span class="tt-v">${d.cp}</span></div>
+         <div class="tt-r"><span class="tt-l">Status</span><span class="tt-v"><span class="badge ${SBCLS[d.s]}">${d.s}</span></span></div>
+         <div class="tt-r"><span class="tt-l">Grid link</span><span class="tt-v">${sc_lbl}</span></div>`;
+     })
+     .on('mousemove', e => posTT(e))
+     .on('mouseout', hideTT)
+     .on('click', () => { hideTT(); panToMap(d); });
+  });
+
+  // X-axis
+  g.append('g').attr('transform', `translate(0,${ch})`).call(
+    d3.axisBottom(x).ticks(10).tickFormat(d3.format('d')).tickSize(3)
+  ).call(a => a.select('.domain').attr('stroke','var(--border)'))
+   .call(a => a.selectAll('.tick line').attr('stroke','var(--border)'))
+   .call(a => a.selectAll('text').attr('font-size',8.5).attr('fill','var(--hint)'));
+}
+
+
+/* ── Scatter panel (C) ─────────────────────────────────────────────────── */
+function renderScatterPanel() {
+  const svg = d3.select('#scatterSvg');
+  svg.selectAll('*').remove();
+
+  const PW = 860, PH = 195;
+  const ml = 52, mr = 22, mt = 18, mb = 26;
+  const cw = PW - ml - mr, ch = PH - mt - mb;
+
+  const data = DEALS.filter(d => d.inv > 0 && d.mwNum > 0);
+  const effMode = scatterMode === 'efficiency';
+
+  // Efficiency mode: x = $/MW, y = capacity (MW)
+  const ipm = d => Math.round(d.inv * 1000 / d.mwNum);
+  const xVals = effMode ? data.map(ipm) : data.map(d => d.mwNum);
+  const yVals = effMode ? data.map(d => d.mwNum) : data.map(d => d.inv);
+  const xMax  = d3.max(xVals) * 1.10;
+  const yMax  = d3.max(yVals) * 1.06;
+
+  const x = d3.scaleLinear().domain([0, xMax]).range([0, cw]);
+  const y = d3.scaleLinear().domain([0, yMax]).range([ch, 0]);
+
+  const g = svg.append('g').attr('transform', `translate(${ml},${mt})`);
+
+  // Light grid
+  x.ticks(6).forEach(v => g.append('line')
+    .attr('x1',x(v)).attr('y1',0).attr('x2',x(v)).attr('y2',ch)
+    .attr('stroke','var(--border)').attr('stroke-width',0.5));
+  y.ticks(5).forEach(v => g.append('line')
+    .attr('x1',0).attr('y1',y(v)).attr('x2',cw).attr('y2',y(v))
+    .attr('stroke','var(--border)').attr('stroke-width',0.5));
+
+  // $/MW reference lines — standard mode only
+  if (!effMode) [{rate:5,lbl:'$5M/MW'},{rate:15,lbl:'$15M/MW'},{rate:45,lbl:'$45M/MW'}].forEach(({rate,lbl}) => {
+    const mwEnd = Math.min(xMax, yMax * 1000 / rate);
+    const invEnd = mwEnd * rate / 1000;
+    g.append('line')
+      .attr('x1',x(0)).attr('y1',y(0)).attr('x2',x(mwEnd)).attr('y2',y(invEnd))
+      .attr('stroke','var(--border)').attr('stroke-width',0.7).attr('stroke-dasharray','4,3');
+    g.append('text').attr('x',x(mwEnd)+2).attr('y',y(invEnd)+1)
+      .attr('font-size',7).attr('fill','var(--hint)').text(lbl);
+  });
+
+  // Points
+  data.forEach(d => {
+    const px = effMode ? x(ipm(d)) : x(d.mwNum);
+    const py = effMode ? y(d.mwNum) : y(d.inv);
+    const tc = TYPES[d.typ] || {};
+    const isDead = d.s === 'Dead';
+    const r = 5.8;
+    const col = isDead ? 'var(--hint)' : (tc.c || '#888');
+    const ipm = Math.round(d.inv * 1000 / d.mwNum);
+
+    // Dot
+    g.append('circle').attr('cx',px).attr('cy',py).attr('r',r)
+      .attr('fill', isDead ? 'var(--raised)' : col)
+      .attr('opacity', isDead ? 0.45 : 0.82)
+      .attr('stroke', col).attr('stroke-width', isDead ? 1 : 0);
+
+    // Estimated ring
+    if (d.mwEst) g.append('circle').attr('cx',px).attr('cy',py).attr('r',r+2)
+      .attr('fill','none').attr('stroke',col).attr('stroke-width',0.8)
+      .attr('stroke-dasharray','2,1').attr('opacity',0.55).attr('pointer-events','none');
+
+    // Label
+    const lbl = d.n.replace(' / ',' · ').replace('STACK / ','').replace(' Digital Gateway','').replace('PowerHouse 95','PH95').replace('Quantum Frederick','QF').replace('Brightseat Tech Park (Landover)','Brightseat').replace('CleanArc VA1','CleanArc').replace('Woodlawn / Baltimore Co.','Woodlawn').replace('Dickerson / Montgomery Co.','Dickerson');
+    const short = lbl.length > 16 ? lbl.slice(0,15)+'…' : lbl;
+    g.append('text').attr('x',px+r+2).attr('y',py+1)
+      .attr('dominant-baseline','middle').attr('font-size',7.5)
+      .attr('fill', isDead ? 'var(--hint)' : 'var(--muted)').text(short);
+
+    // Hit area
+    g.append('circle').attr('cx',px).attr('cy',py).attr('r',r+5)
+      .attr('fill','transparent').style('cursor','pointer')
+      .on('mouseover', e => {
+        posTT(e); ttEl.style.display='block';
+        ttEl.innerHTML = `<p class="tt-n">${d.n}</p>
+          <div class="tt-r"><span class="tt-l">Investment</span><span class="tt-v">${d.iL}</span></div>
+          <div class="tt-r"><span class="tt-l">Capacity</span><span class="tt-v">${d.cp}${d.mwEst?' †':''}</span></div>
+          <div class="tt-r"><span class="tt-l">$/MW</span><span class="tt-v">~$${ipm}M/MW${d.mwEst?' (est.)':''}</span></div>
+          ${d.pue?`<div class="tt-r"><span class="tt-l">PUE (disclosed)</span><span class="tt-v">${d.pue.toFixed(2)}</span></div>`:''}
+          <div class="tt-r"><span class="tt-l">Type</span><span class="tt-v" style="color:${col}">${tc.lbl||d.typ}</span></div>`;
+      })
+      .on('mousemove', e => posTT(e))
+      .on('mouseout', hideTT)
+      .on('click', () => { hideTT(); panToMap(d); });
+  });
+
+  // Axes
+  g.append('g').attr('transform',`translate(0,${ch})`).call(
+    d3.axisBottom(x).ticks(6).tickFormat(v => effMode ? (v?'$'+v+'M':'') : (v>=1000?(v/1000).toFixed(0)+'GW':v+'MW')).tickSize(3)
+  ).call(a=>a.select('.domain').attr('stroke','var(--border)'))
+   .call(a=>a.selectAll('.tick line').attr('stroke','var(--border)'))
+   .call(a=>a.selectAll('text').attr('font-size',8.5).attr('fill','var(--hint)'));
+
+  g.append('g').call(
+    d3.axisLeft(y).ticks(5).tickFormat(v => effMode ? (v>=1000?(v/1000).toFixed(1)+'GW':v+'MW') : (v>0?'$'+v+'B':'')).tickSize(3)
+  ).call(a=>a.select('.domain').attr('stroke','var(--border)'))
+   .call(a=>a.selectAll('.tick line').attr('stroke','var(--border)'))
+   .call(a=>a.selectAll('text').attr('font-size',8.5).attr('fill','var(--hint)'));
+
+  g.append('text').attr('x',cw/2).attr('y',ch+19).attr('text-anchor','middle')
+    .attr('font-size',8.5).attr('fill','var(--hint)').text(effMode ? '$/MW (investment intensity)' : 'Announced capacity (MW)');
+  g.append('text').attr('transform','rotate(-90)').attr('x',-ch/2).attr('y',-40)
+    .attr('text-anchor','middle').attr('font-size',8.5).attr('fill','var(--hint)')
+    .text(effMode ? 'Capacity (MW)' : 'Investment ($B)');
+}
+
+
+/* ── Tax / fiscal panel (D) ────────────────────────────────────────────── */
+function renderTaxTable() {
+  const el = document.getElementById('taxTableEl');
+  if (!el) return;
+
+  function parseTx(tx) { const m = tx.match(/([\d.]+)/); return m ? parseFloat(m[1]) : -1; }
+
+  const sortFns = {
+    tx:        (a,b) => parseTx(b.tx) - parseTx(a.tx),
+    mwNum:     (a,b) => b.mwNum - a.mwNum,
+    inv:       (a,b) => b.inv   - a.inv,
+    n:         (a,b) => a.n.localeCompare(b.n),
+    tax_exempt:(a,b) => (a.tax_exempt||'').localeCompare(b.tax_exempt||''),
+  };
+  const baseFn = sortFns[taxCol] || sortFns.tx;
+  const sorted = [...DEALS].sort((a,b) => {
+    if (a.st !== b.st) return a.st === 'VA' ? -1 : 1;
+    return taxAsc ? -baseFn(a,b) : baseFn(a,b);
+  });
+
+  function badge(te) {
+    const map = {
+      'va':     '<span class="badge b-active">VA DCSA</span>',
+      'va-risk':'<span class="badge b-contested">VA DCSA ⚠</span>',
+      'md':     '<span class="badge b-announced">MD</span>',
+      'na':     '<span class="badge b-dead">N/A</span>'
+    };
+    return map[te] || te;
+  }
+
+  const rows = sorted.map(d => {
+    const ipm = (d.mwNum > 0 && d.inv > 0) ? '$'+Math.round(d.inv*1000/d.mwNum)+'M' : '—';
+    const tc  = TYPES[d.typ] || {};
+    const dim = d.s === 'Dead' ? 'opacity:0.45' : '';
+    return `<tr style="border-bottom:0.5px solid var(--border);${dim}">
+      <td style="padding:5px 8px 5px 0;font-size:10.5px;color:var(--text)"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:${tc.c||'#888'};margin-right:5px;flex-shrink:0"></span>${d.n}</td>
+      <td style="padding:5px 5px;font-size:10px;color:var(--muted);white-space:nowrap">${d.st} · ${d.u}</td>
+      <td style="padding:5px 5px;font-size:10px;color:var(--text);text-align:right;white-space:nowrap">${d.mwNum>=1000?(d.mwNum/1000).toFixed(1)+' GW':d.mwNum+' MW'}${d.mwEst?' †':''}</td>
+      <td style="padding:5px 5px;font-size:10px;color:var(--text);text-align:right;white-space:nowrap">${d.tx}</td>
+      <td style="padding:5px 5px;font-size:10px;color:var(--muted);text-align:right">${ipm}</td>
+      <td style="padding:5px 0 5px 5px">${badge(d.tax_exempt)}</td>
+    </tr>`;
+  }).join('');
+
+  const mkth = (s, col, align) => {
+    align = align || 'left';
+    const isActive = taxCol === col;
+    const arr = isActive ? (taxAsc ? ' ▲' : ' ▼') : '';
+    const pad = align === 'right' ? '4px 5px 6px 5px' : '4px 5px 6px 0';
+    const color = isActive ? 'var(--text)' : 'var(--muted)';
+    return `<th style="padding:${pad};font-size:9px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:${color};text-align:${align};border-bottom:0.5px solid var(--line);cursor:pointer;user-select:none" onclick="if(taxCol==='${col}'){taxAsc=!taxAsc}else{taxCol='${col}';taxAsc=false};renderTaxTable()">${s}${arr}</th>`;
+  };
+
+  el.innerHTML = `<table style="width:100%;border-collapse:collapse">
+    <thead><tr>${mkth('Deal','n')}${mkth('St · Utility','u')}${mkth('Capacity','mwNum','right')}${mkth('Annual tax rev.','tx','right')}${mkth('$/MW','inv','right')}${mkth('Exemption','tax_exempt')}</tr></thead>
+    <tbody>${rows}</tbody>
+  </table>`;
+}
+
+
+/* ── PUE panel (E) ─────────────────────────────────────────────────────── */
+function renderPuePanel() {
+  const svg = d3.select('#pueSvg');
+  svg.selectAll('*').remove();
+
+  const PW = 860, PH = 108;
+  const ml = 128, mr = 22, mt = 6, mb = 20;
+  const cw = PW - ml - mr, ch = PH - mt - mb;
+
+  const PUE_REF = [
+    {typ:'hyperscale', lo:1.10, hi:1.22, disclosed:[{id:'aws',val:1.15,lbl:'AWS'},{id:'goog',val:1.12,lbl:'Google'}]},
+    {typ:'ai-dense',   lo:1.08, hi:1.18, disclosed:[]},
+    {typ:'wholesale',  lo:1.25, hi:1.52, disclosed:[]},
+    {typ:'campus',     lo:1.15, hi:1.28, disclosed:[]},
+    {typ:'speculative',lo:null, hi:null,  disclosed:[]},
+  ];
+
+  const xDom = [1.00, 1.62];
+  const x = d3.scaleLinear().domain(xDom).range([0, cw]);
+  const rowH = ch / PUE_REF.length;
+
+  const g = svg.append('g').attr('transform', `translate(${ml},${mt})`);
+
+  // Vertical grid
+  [1.0,1.1,1.2,1.3,1.4,1.5,1.6].forEach(v => {
+    g.append('line').attr('x1',x(v)).attr('y1',0).attr('x2',x(v)).attr('y2',ch)
+      .attr('stroke','var(--border)').attr('stroke-width',0.5);
+  });
+
+  // "Ideal" PUE = 1.0 reference
+  g.append('line').attr('x1',x(1.0)).attr('y1',0).attr('x2',x(1.0)).attr('y2',ch)
+    .attr('stroke','var(--edge)').attr('stroke-width',1).attr('stroke-dasharray','2,2');
+
+  PUE_REF.forEach((row, i) => {
+    const tc = TYPES[row.typ] || {};
+    const yc = i * rowH + rowH / 2;
+
+    // Type label
+    g.append('text').attr('x',-6).attr('y',yc)
+      .attr('text-anchor','end').attr('dominant-baseline','middle')
+      .attr('font-size',9.5).attr('font-weight','500').attr('fill','var(--muted)')
+      .text(tc.lbl ? tc.lbl.split(' ')[0] + (tc.lbl.includes('/') ? ' / GPU' : '') : row.typ);
+
+    if (row.lo === null) {
+      g.append('text').attr('x',x(1.31)).attr('y',yc)
+        .attr('dominant-baseline','middle').attr('font-size',9).attr('fill','var(--hint)')
+        .text('No data');
+      return;
+    }
+
+    // Reference band
+    const bh = rowH * 0.46;
+    g.append('rect')
+      .attr('x',x(row.lo)).attr('y',yc - bh/2)
+      .attr('width', Math.max(0, x(row.hi) - x(row.lo))).attr('height', bh)
+      .attr('fill', tc.c || '#888').attr('opacity', 0.14).attr('rx', 2);
+    g.append('rect')
+      .attr('x',x(row.lo)).attr('y',yc - bh/2)
+      .attr('width', Math.max(0, x(row.hi) - x(row.lo))).attr('height', bh)
+      .attr('fill', 'none').attr('stroke', tc.c || '#888').attr('stroke-width', 0.7)
+      .attr('opacity', 0.35).attr('rx', 2);
+
+    // Range label
+    g.append('text').attr('x', x(row.hi)+3).attr('y', yc)
+      .attr('dominant-baseline','middle').attr('font-size',8).attr('fill','var(--hint)')
+      .text(row.lo.toFixed(2)+'–'+row.hi.toFixed(2)+' (est.)');
+
+    // Disclosed dots
+    row.disclosed.forEach(pt => {
+      g.append('circle').attr('cx',x(pt.val)).attr('cy',yc).attr('r',5)
+        .attr('fill', tc.c || '#888').attr('opacity',0.88);
+      g.append('text').attr('x',x(pt.val)).attr('y',yc+8)
+        .attr('text-anchor','middle').attr('font-size',7.5)
+        .attr('fill', tc.c || '#888').attr('font-weight','600').text(pt.val.toFixed(2));
+      g.append('text').attr('x',x(pt.val)).attr('y',yc-7)
+        .attr('text-anchor','middle').attr('font-size',7).attr('fill','var(--muted)')
+        .text(pt.lbl+' ✓');
+    });
+
+    // "?" for types with no disclosed value
+    if (row.disclosed.length === 0) {
+      const midX = x((row.lo + row.hi) / 2);
+      g.append('text').attr('x',midX).attr('y',yc)
+        .attr('text-anchor','middle').attr('dominant-baseline','middle')
+        .attr('font-size',9).attr('fill', tc.c || '#888').attr('opacity',0.45)
+        .text('not disclosed');
+    }
+  });
+
+  // VA DCSA PUE threshold line
+  g.append('line').attr('x1',x(1.2)).attr('y1',-4).attr('x2',x(1.2)).attr('y2',ch)
+    .attr('stroke','#B91C1C').attr('stroke-width',1.2).attr('stroke-dasharray','3,2').attr('opacity',0.75);
+  g.append('text').attr('x',x(1.2)+2).attr('y',-6)
+    .attr('font-size',7.5).attr('fill','#B91C1C').attr('fill-opacity',0.80)
+    .text('VA DCSA limit (1.2)');
+
+  // Estimated dots (when showPueEst is true)
+  if (showPueEst) {
+    PUE_REF.forEach((row, i) => {
+      if (row.lo === null) return;
+      const yc = i * rowH + rowH / 2;
+      const tc = TYPES[row.typ] || {};
+      DEALS.filter(d => d.typ === row.typ && PUE_EST[d.cooling]).forEach(d => {
+        const ev = PUE_EST[d.cooling];
+        const px2 = x(ev);
+        const short = d.n.replace(/.*\//,'').replace('STACK ','').replace(' Campus','').trim().split(' ').slice(0,2).join(' ');
+        g.append('circle').attr('cx',px2).attr('cy',yc).attr('r',4.5)
+          .attr('fill','none').attr('stroke',tc.c||'#888').attr('stroke-width',1.5).attr('opacity',0.80);
+        g.append('text').attr('x',px2).attr('y',yc-6.5)
+          .attr('text-anchor','middle').attr('font-size',6.5)
+          .attr('fill',tc.c||'#888').attr('fill-opacity',0.75).text(short+'†');
+      });
+    });
+  }
+
+  // X-axis
+  g.append('g').attr('transform',`translate(0,${ch})`).call(
+    d3.axisBottom(x).tickValues([1.0,1.1,1.2,1.3,1.4,1.5,1.6]).tickFormat(d3.format('.1f')).tickSize(3)
+  ).call(a=>a.select('.domain').attr('stroke','var(--border)'))
+   .call(a=>a.selectAll('.tick line').attr('stroke','var(--border)'))
+   .call(a=>a.selectAll('text').attr('font-size',8.5).attr('fill','var(--hint)'));
+
+  g.append('text').attr('x',cw/2).attr('y',ch+18).attr('text-anchor','middle')
+    .attr('font-size',8.5).attr('fill','var(--hint)').text('PUE  (1.0 = perfect efficiency →)');
+}
+
+
+/* ── Flashpoint panel (F) ──────────────────────────────────────────────── */
+function renderFlashPanel() {
+  const svg = d3.select('#flashSvg');
+  svg.selectAll('*').remove();
+
+  const PW = 860, PH = 288;
+  const ml = 158, mr = 12, mt = 26, mb = 18;
+  const cw = PW - ml - mr, ch = PH - mt - mb;
+
+  const dims = REG_DIMS;
+  const NCOLS = dims.length + 1; // +1 for total
+  const cw_cell = Math.floor(cw / NCOLS);
+  const rh = Math.floor(ch / DEALS.length);
+
+  // Sort deals by total score descending
+  const scored = DEALS.map(d => {
+    const sc = REGSCORE[d.id] || [0,0,0,0,0,0];
+    const total = sc.reduce((a,b) => a+b, 0);
+    return {d, sc, total};
+  }).sort((a,b) => {
+    const dimIdx = REG_DIMS.findIndex(d => d.id === flashSortDim);
+    const va = flashSortDim === 'total' ? a.total : (a.sc[dimIdx] ?? 0);
+    const vb = flashSortDim === 'total' ? b.total : (b.sc[dimIdx] ?? 0);
+    return flashSortAsc ? va - vb : vb - va;
+  });
+
+  const g = svg.append('g').attr('transform', `translate(${ml},${mt})`);
+
+  // Cell color scale
+  const RC = ['#DCFCE7','#FEF9C3','#FED7AA','#FECACA'];
+  const totalColor = t => {
+    if (t <= 3)  return '#DCFCE7';
+    if (t <= 7)  return '#FEF9C3';
+    if (t <= 11) return '#FED7AA';
+    return '#FECACA';
+  };
+
+  // Column headers (clickable sort)
+  dims.forEach((dim, ci) => {
+    const cx = ci * cw_cell + cw_cell/2;
+    const isActive = flashSortDim === dim.id;
+    const arr = isActive ? (flashSortAsc ? ' ▲' : ' ▼') : '';
+    g.append('text').attr('x',cx).attr('y',-8)
+      .attr('text-anchor','middle').attr('font-size',8.5)
+      .attr('font-weight','600').attr('fill', isActive ? 'var(--text)' : 'var(--muted)')
+      .style('cursor','pointer').text(dim.lbl + arr)
+      .on('click', () => {
+        if (flashSortDim === dim.id) flashSortAsc = !flashSortAsc;
+        else { flashSortDim = dim.id; flashSortAsc = false; }
+        renderFlashPanel();
+      });
+  });
+  // "Total" header
+  const totalX = dims.length * cw_cell + cw_cell/2;
+  const totalActive = flashSortDim === 'total';
+  const totalArr = totalActive ? (flashSortAsc ? ' ▲' : ' ▼') : '';
+  g.append('text').attr('x',totalX).attr('y',-8)
+    .attr('text-anchor','middle').attr('font-size',8.5)
+    .attr('font-weight','700').attr('fill','var(--text)')
+    .style('cursor','pointer').text('Total' + totalArr)
+    .on('click', () => {
+      if (flashSortDim === 'total') flashSortAsc = !flashSortAsc;
+      else { flashSortDim = 'total'; flashSortAsc = false; }
+      renderFlashPanel();
+    });
+
+  // Rows
+  scored.forEach(({d, sc, total}, ri) => {
+    const y0 = ri * rh;
+
+    // Deal name
+    const nm = d.n.length > 24 ? d.n.slice(0,23)+'…' : d.n;
+    const tc = TYPES[d.typ] || {};
+    g.append('text').attr('x',-6).attr('y', y0 + rh/2)
+      .attr('text-anchor','end').attr('dominant-baseline','middle')
+      .attr('font-size', 8.5).attr('fill', d.s==='Dead'?'var(--hint)':'var(--muted)')
+      .attr('font-style', d.s==='Dead'?'italic':'normal')
+      .text(nm);
+
+    // Type dot
+    g.append('circle').attr('cx',-ml+6).attr('cy', y0+rh/2).attr('r',3.5)
+      .attr('fill', tc.c||'#888').attr('opacity',0.85).attr('pointer-events','none');
+
+    // Dimension cells
+    dims.forEach((dim, ci) => {
+      const score = sc[ci] || 0;
+      const cx = ci * cw_cell;
+      g.append('rect').attr('x',cx).attr('y',y0).attr('width',cw_cell-1).attr('height',rh-1)
+        .attr('fill', RC[score]).attr('rx',1);
+      g.append('text').attr('x',cx+cw_cell/2).attr('y',y0+rh/2)
+        .attr('text-anchor','middle').attr('dominant-baseline','middle')
+        .attr('font-size', 9).attr('font-family','var(--mono)').attr('fill','var(--muted)')
+        .text(score);
+      // Hover
+      g.append('rect').attr('x',cx).attr('y',y0).attr('width',cw_cell-1).attr('height',rh-1)
+        .attr('fill','transparent').style('cursor','default')
+        .on('mouseover', e => showFlashTT(e, d, dim, score))
+        .on('mousemove', e => showFlashTT(e, d, dim, score))
+        .on('mouseout',  hideTT);
+    });
+
+    // Total cell
+    const tx = dims.length * cw_cell;
+    g.append('rect').attr('x',tx).attr('y',y0).attr('width',cw_cell-1).attr('height',rh-1)
+      .attr('fill', totalColor(total)).attr('rx',1);
+    g.append('text').attr('x',tx+cw_cell/2).attr('y',y0+rh/2)
+      .attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .attr('font-size', 9.5).attr('font-weight','700').attr('font-family','var(--mono)')
+      .attr('fill','var(--text)').text(total);
+  });
+
+  // Row separator lines
+  scored.forEach(({}, ri) => {
+    if (ri === 0) return;
+    g.append('line').attr('x1',0).attr('y1',ri*rh).attr('x2',cw).attr('y2',ri*rh)
+      .attr('stroke','var(--surface)').attr('stroke-width',1);
+  });
+
+  // Column separator lines
+  for (let ci = 1; ci <= NCOLS; ci++) {
+    g.append('line').attr('x1',ci*cw_cell).attr('y1',0).attr('x2',ci*cw_cell).attr('y2',ch)
+      .attr('stroke','var(--surface)').attr('stroke-width',1.5);
+  }
+
+  // Color legend strip
+  const legY = ch + 6;
+  const legW = cw / 5;
+  [{s:0,lbl:'0 — Minimal'},{s:1,lbl:'1 — Low'},{s:2,lbl:'2 — Elevated'},{s:3,lbl:'3 — High'}]
+    .forEach(({s,lbl}, i) => {
+      g.append('rect').attr('x',i*(legW+4)).attr('y',legY).attr('width',legW).attr('height',7)
+        .attr('fill',RC[s]).attr('rx',1);
+      g.append('text').attr('x',i*(legW+4)+legW/2).attr('y',legY+13)
+        .attr('text-anchor','middle').attr('font-size',8).attr('fill','var(--hint)').text(lbl);
+    });
 }
 
 /* ── Load topology and render ────────────────────────────────────────── */
@@ -552,6 +1628,71 @@ d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/counties-10m.json').then(us => 
   gBord.selectAll('.sb').data(mainS).enter().append('path')
     .attr('d', pth).attr('fill', 'none').attr('stroke', '#8a8580').attr('stroke-width', 1.1);
 
+  // Regulatory choropleth (county risk scores)
+  mainC.forEach(f => {
+    const fips = String(f.id).padStart(5,'0');
+    const score = CHORO[fips];
+    if (score == null) return;
+    gChoro.append('path').datum(f).attr('d', pth)
+      .attr('fill', choroColor(score)).attr('opacity', 0.72)
+      .attr('stroke', 'none').attr('pointer-events','none');
+  });
+  gChoro.style('display', 'none'); // off by default; toggle via btnChoro
+
+  // Moratorium & contested zoning overlay
+  mainC.forEach(f => {
+    const fips = String(f.id).padStart(5,'0');
+    const mc = MORT_COUNTIES[fips];
+    if (!mc) return;
+    gMort.append('path').datum(f).attr('d', pth)
+      .attr('fill', mc.col).attr('fill-opacity', 0.14)
+      .attr('stroke', mc.col).attr('stroke-width', 1.3)
+      .attr('stroke-dasharray', '5,3').attr('stroke-opacity', 0.65)
+      .style('cursor','crosshair')
+      .on('mouseover', e => showMortTT(e, mc))
+      .on('mousemove', e => showMortTT(e, mc))
+      .on('mouseout',  hideTT);
+  });
+
+  // Transmission grid layer
+  GRID_LINES.forEach(line => {
+    const col = GC[line.kv]?.[line.status] || '#888';
+    const sw  = line.kv === 500 ? 2.0 : 1.3;
+    const da  = line.status === 'proposed' ? '8,5' : line.status === 'new' ? '5,3' : null;
+    const pts = line.coords.map(([lat,lng]) => proj([lng,lat]));
+    const d   = 'M' + pts.map(([x,y]) => x.toFixed(1)+','+y.toFixed(1)).join('L');
+
+    // Halo for legibility
+    gGrid.append('path').attr('d',d).attr('fill','none')
+      .attr('stroke','white').attr('stroke-width', sw+2.5).attr('opacity',0.45)
+      .attr('stroke-linecap','round').attr('pointer-events','none');
+
+    // Main line
+    gGrid.append('path').attr('d',d).attr('fill','none')
+      .attr('stroke', col).attr('stroke-width', sw)
+      .attr('stroke-dasharray', da).attr('opacity', line.status==='proposed' ? 0.70 : 0.88)
+      .attr('stroke-linecap','round').style('cursor','crosshair')
+      .on('mouseover', e => showGridTT(e,line))
+      .on('mousemove', e => showGridTT(e,line))
+      .on('mouseout',  hideTT);
+  });
+
+  // Substation markers
+  SUBSTATIONS.forEach(ss => {
+    const [px,py] = proj([ss.lng, ss.lat]);
+    const col = GC[ss.kv]?.[ss.status] || '#888';
+    const r   = ss.kv === 500 ? 4.0 : 2.8;
+    gGrid.append('rect')
+      .attr('x', px-r).attr('y', py-r).attr('width', r*2).attr('height', r*2)
+      .attr('fill', ss.status==='existing' ? col : 'white')
+      .attr('stroke', col).attr('stroke-width', ss.status==='existing' ? 0 : 1.5)
+      .attr('opacity', 0.90).attr('pointer-events','none');
+    gGrid.append('text').attr('x', px+r+2).attr('y', py+1)
+      .attr('font-size', 6.5).attr('font-weight','600').attr('fill', col)
+      .attr('fill-opacity', 0.82).attr('pointer-events','none')
+      .text(ss.name);
+  });
+
   // State labels
   [{name:'VIRGINIA',lng:-79.6,lat:37.2},{name:'MARYLAND',lng:-77.2,lat:39.56},{name:'D.C.',lng:-77.01,lat:38.88}]
     .forEach(l => {
@@ -565,9 +1706,22 @@ d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/counties-10m.json').then(us => 
   DENSITY.forEach(d => {
     const [px, py] = proj([d.lng, d.lat]);
     const dg = gDens.append('g').style('cursor', 'crosshair');
+    // Outer halo — soft glow at 1.6× radius
+    dg.append('circle').attr('cx', px).attr('cy', py).attr('r', d.r * 1.6)
+      .attr('fill', '#C47A20').attr('fill-opacity', 0.07)
+      .attr('stroke', '#C47A20').attr('stroke-width', 0.6)
+      .attr('stroke-opacity', 0.22).attr('pointer-events', 'none');
+    // Core zone circle
     dg.append('circle').attr('cx', px).attr('cy', py).attr('r', d.r)
-      .attr('fill', '#b8b3aa').attr('opacity', 0.20)
-      .attr('stroke', '#9a9590').attr('stroke-width', 0.8).attr('stroke-dasharray', '3,2');
+      .attr('fill', '#C47A20').attr('fill-opacity', 0.18)
+      .attr('stroke', '#B05F10').attr('stroke-width', 1.5)
+      .attr('stroke-dasharray', '5,3').attr('stroke-opacity', 0.75);
+    // Count label above circle
+    dg.append('text').attr('x', px).attr('y', py - d.r - 4)
+      .attr('text-anchor', 'middle').attr('font-size', 7.5)
+      .attr('fill', '#7a4808').attr('fill-opacity', 0.88)
+      .attr('font-weight', '600').attr('pointer-events', 'none')
+      .text(d.tag);
     dg.on('mouseover', e => showDensTT(e, d))
       .on('mousemove', e => showDensTT(e, d))
       .on('mouseout',  hideTT);
@@ -587,12 +1741,51 @@ d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/counties-10m.json').then(us => 
   });
 
   renderDeals();
+  renderScatterPanel();
+  renderTaxTable();
+  renderPuePanel();
+  renderFlashPanel();
 
 }).catch(() => {
   svg.append('text').attr('x', W/2).attr('y', H/2).attr('text-anchor', 'middle')
     .attr('font-size', 14).attr('fill', '#6b6963')
     .text('Map data unavailable. Check your internet connection and reload.');
 });
+/* ── Mobile / responsive init ──────────────────────────────────────────────── */
+(function initResponsive() {
+  // Wrap panel SVGs in horizontal scroll containers
+  ['capSvg','pipeSvg','scatterSvg','pueSvg','flashSvg'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'panel-scroll';
+    el.parentNode.insertBefore(wrap, el);
+    wrap.appendChild(el);
+  });
+
+  // Touch tooltip: tap → show tooltip for 2 s then hide
+  const msvgEl = document.getElementById('msvg');
+  if (msvgEl && 'ontouchstart' in window) {
+    msvgEl.addEventListener('touchstart', e => {
+      if (e.touches.length !== 1) return;
+      const t = e.touches[0];
+      // Dispatch pointerover so D3 tooltip handlers fire
+      const target = document.elementFromPoint(t.clientX, t.clientY);
+      if (target && target !== msvgEl) {
+        target.dispatchEvent(new MouseEvent('mouseover',
+          { clientX: t.clientX, clientY: t.clientY, bubbles: true }));
+        setTimeout(hideTT, 2800);
+      }
+    }, { passive: true });
+  }
+
+  // On very small screens, shorten the pipeline "Announced" label
+  if (window.innerWidth < 420) {
+    const ann = document.getElementById('bps_ann');
+    if (ann) ann.textContent = 'Ann.';
+  }
+})();
+
 </script>
 </body>
 </html>
