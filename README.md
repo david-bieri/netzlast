@@ -135,7 +135,7 @@ https://david-bieri.github.io/netzlast/
 
 ## Contact
 
-David Bieri · Associate Professor of Regional Economics and Economic Geography  
+David Bieri · Associate Professor
 School of Public and International Affairs, Virginia Tech  
 [bieri@vt.edu](mailto:bieri@vt.edu)  
 Research: *"Who Pays for AI's Power Appetite? Virginia as the First AI Resource State"*
