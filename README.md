@@ -1,77 +1,145 @@
-# Netzlast — Data Center Infrastructure Map
+# Netzlast — Data Center Investment: Virginia & Maryland
 
-**Interactive policy map: Virginia & Maryland data center investment, utility service territories, and NextEra–Dominion merger exposure**
+**Interactive policy map of 13 major announced data center deals and ~35 established operational campuses across Virginia and Maryland, with utility service territory overlays, PJM transmission infrastructure, and six analytical panels.**
 
-🗺️ **Live map:** [david-bieri.github.io/netzlast](https://david-bieri.github.io/netzlast)
-
----
-
-## What this shows
-
-The map visualizes three overlapping stories about AI infrastructure and energy governance in the Mid-Atlantic:
-
-**1. Active deals** — 13 major announced or contested data center investments (May 2026), sized by dollar commitment and colored by status. Circle rings encode the utility provider; a small corner dot indicates state. Click any marker for full project details.
-
-**2. Established campuses** — ~35 named operational facilities across Virginia and Maryland (gray diamonds). Northern Virginia alone has 600+ total data centers; the Ashburn/Sterling density zone represents this concentration.
-
-**3. Utility service territories** — County-level coloring by primary utility. The key analytical dimension: Dominion Energy (light blue) serves nearly the entire eastern half of Virginia, covering almost every active deal. The REC (green) counties where CleanArc and EdgeCore operate are structurally insulated from the NextEra merger. Maryland splits between BGE (Exelon, central MD) and Pepco (Exelon, DC metro) — a separate regulatory universe from Virginia's SCC proceedings.
+🗺️ **[Live dashboard →](https://david-bieri.github.io/netzlast/)**
+📖 **[User guide →](https://david-bieri.github.io/netzlast/guide.html)**
 
 ---
 
-## Analytical context
+## Overview
 
-This map accompanies work on Virginia as the "first AI resource state" — the jurisdiction where AI-scale infrastructure demand is stress-testing a governance architecture built for a different era.
+*Netzlast* (German: grid load) maps the collision between data center capital — the physical infrastructure of AI — and the grid, regulatory, and governance systems of Virginia and Maryland. Virginia hosts roughly 35% of global data center capacity and is navigating the contested NextEra–Dominion Energy merger, a $1.9B/yr sales tax exemption under legislative pressure, and a PJM transmission grid not designed for gigawatt-scale point loads.
 
-The **NextEra–Dominion merger** (announced May 18, 2026) is the structuring event. A $67 billion all-stock deal that would create the world's largest regulated electric utility, it requires approval from Virginia's SCC, FERC, the NRC, and state commissions in North Carolina and South Carolina. The utility service territory overlay makes the merger's geographic footprint — and its limits — immediately visible.
-
-The **Berry Hill / STACK Infrastructure deal** (approved the same day, Pittsylvania County/Danville City) represents one of the largest industrial announcements in U.S. history at $100B over 30 years, in a region with essentially no existing data center infrastructure. Its location in the southwestern corner of the Dominion service territory, far from any established density zone, captures the core infrastructure governance challenge.
-
-Related work: *"Who Pays for AI's Power Appetite? Virginia as the First AI Resource State"* — David Bieri, School of Public and International Affairs, Virginia Tech.
+The dashboard supports the research project **"Who Pays for AI's Power Appetite? Virginia as the First AI Resource State"** — School of Public and International Affairs, Virginia Tech.
 
 ---
 
-## Deploy to GitHub Pages
+## Files
 
-1. Push this repository to GitHub (the repo is already configured)
-2. Go to **Settings → Pages → Source** → select `main` branch, `/ (root)` folder
-3. Click **Save**
-4. Your map will be live at `https://david-bieri.github.io/netzlast/` within a few minutes
-
-The `.nojekyll` file prevents GitHub's Jekyll processor from interfering with the HTML.
-
-No build step, no dependencies to install. The page is a single self-contained HTML file that loads D3 and TopoJSON from CDN at runtime.
-
----
-
-## Data sources
-
-| Layer | Sources |
+| File | Description |
 |---|---|
-| Announced deals | WSLS, VEDP, MD Commerce, SEC filings, court filings (May 2026) |
-| Established campuses | Baxtel, DataCenterMap, operator disclosures |
-| Utility territories | EIA, VEDP, individual utility disclosures; county-level approximations |
-| County/state boundaries | US Atlas TopoJSON (Mike Bostock / Observable) |
-| Deal details | Data Center Dynamics, Bisnow, Baltimore Banner, Maryland Matters, Virginia Mercury |
-
-Utility service territories are approximate county-level assignments. Many utilities serve portions of counties; cooperative boundaries are especially irregular. Established campus coordinates are approximate based on public addresses and industry databases.
+| `index.html` | Full dashboard — single self-contained HTML file, no build step |
+| `guide.html` | 14-section user guide covering all features, data fields, and methodology |
+| `MAINTENANCE.md` | Data update routines, field checklist, CHORO/REGSCORE sync guide, deployment |
+| `README.md` | This file |
 
 ---
 
-## Tech stack
+## Map features
 
-- [D3.js v7](https://d3js.org/) — map projection, zoom, SVG rendering
-- [TopoJSON](https://github.com/topojson/topojson) — topology parsing
-- [US Atlas](https://github.com/topojson/us-atlas) — county and state boundaries
+**Deal markers** encode four variables simultaneously: outer ring colour = serving utility (Dominion blue / BGE purple / Pepco dashed brown / REC dotted green / AEP dashed red), circle fill = deal status (Active / Dead / Contested / Announced), lower-left dot = project type, upper-right dot = state (VA / MD). Circle size scales with investment ($B, √-scaled). Click any marker to open the full detail card.
 
-No framework. No build toolchain. Single HTML file.
+**Toggleable layers**
+
+| Button | Layer |
+|---|---|
+| ▦ Utility areas | County-level utility service territories (Dominion, BGE, Pepco, REC, AEP, NOVEC, MD co-ops) |
+| ⬡ Density | NoVA 300+ data center cluster zones with facility count labels |
+| ◇ Established | ~35 operational campuses (hover for operator and MW) |
+| ⚡ Grid lines | 7 transmission segments: 500kV existing/new, 230kV new, MPRP proposed (hover for SCC case) |
+| ▨ Reg. zones | Active data center moratoria (PG Co. MD, Montgomery Co. MD) and contested zoning (Prince William Co. VA) |
+| ◉ Risk map | County choropleth shaded by aggregate regulatory flashpoint score (0–18) |
+
+**Filters** — Deal status / State / Utility / Project type — combine with AND logic and update Panels A and B in real time.
 
 ---
 
-## Author
+## Analytical panels
 
-**David Bieri**  
-Associate Professor, School of Public and International Affairs  
-Virginia Tech · Blacksburg, Virginia  
-[bieri@vt.edu](mailto:dbieri@vt.edu)
+| Panel | Title | Interactive controls |
+|---|---|---|
+| A | Capacity by utility & project type | MW ↔ $B toggle · click utility bar to set filter |
+| B | Project pipeline (Gantt) | Sort by Announced / Online / MW / Investment · year-range zoom presets · click bar → pan map |
+| C | Investment vs. capacity scatter | Inv vs. MW ↔ $/MW rank axis swap |
+| D | Fiscal exposure & tax exemption table | Click any column header to sort |
+| E | PUE benchmarks by type | VA DCSA 1.2 threshold line · Show estimated toggle |
+| F | Regulatory flashpoint matrix | Click any column header to sort by that dimension |
 
-*This map is a research and journalism resource. It does not represent the official views of Virginia Tech.*
+---
+
+## Project typology
+
+| Type | Description | Colour |
+|---|---|---|
+| Hyperscale (own-operate) | Cloud provider builds and operates for own workloads | Deep blue |
+| AI / GPU cluster | Explicitly designed for high-density AI training loads | Deep red |
+| Wholesale colo | Developer builds to spec under long-term wholesale lease | Teal-green |
+| Multi-developer campus | Multi-building campus, consortium or partnership | Purple |
+| Speculative / no tenant | Announced but no committed anchor tenant | Warm grey |
+
+---
+
+## Regulatory flashpoint matrix
+
+Scores each deal 0–3 on six dimensions (Zoning / Grid / Rate regulation / Environmental / Tax / Community), producing an aggregate 0–18 risk score. Sorted by total score descending by default; click any column header to sort by that dimension.
+
+Top-scoring deals as of May 2026: PW Digital Gateway (13), Brightseat Tech Park (13), Dickerson / Montgomery Co. (13), Berry Hill (10), STACK / Stafford (9).
+
+---
+
+## Data model
+
+Each deal object contains 27 fields. Key additions beyond standard deal metadata:
+
+| Field | Description |
+|---|---|
+| `typ` | Project typology (hyperscale / ai-dense / wholesale / campus / speculative) |
+| `mwNum` | Numeric capacity in MW (estimated values flagged with `mwEst:true`) |
+| `cooling` | Cooling type (air / hybrid / liquid / closed-loop / reclaimed) |
+| `pue` | Power Usage Effectiveness — disclosed only for AWS (1.15) and Google (1.12) |
+| `substation` | Grid interconnection status (signed / conditional / pending / partial / na) |
+| `opposition` | Community opposition level (none / low / petition / legal / moratorium) |
+| `tax_exempt` | VA DCSA status (va / va-risk / md / na) |
+| `yr_ann` | Year announced |
+| `yr_online` | Projected year of initial operation |
+
+Full glossary in the [user guide](https://david-bieri.github.io/netzlast/guide.html#glossary).
+
+---
+
+## Key data corrections (documented)
+
+- **Berry Hill** utility corrected from Dominion → **AEP** (Appalachian Power): land sale contingent on AEP guaranteeing 299 MW by end 2028.
+- **EdgeCore / Louisa** investment corrected from $42M (land only) → **$17B+** total announced investment.
+- **Quantum Frederick** capacity corrected to **2,400 MW** (full 2.4 GW campus per Frederick County EDA).
+
+---
+
+## Sources
+
+Local news (WSLS, Virginia Business, Virginia Mercury, Baltimore Banner, Maryland Matters), trade press (Data Center Dynamics, Bisnow, Commercial Observer, Data Center Frontier), regulatory filings (Virginia SCC transmission register, MD PSC Case 9773 / MPRP, PG Co. planning records), company disclosures (EdgeCore Jun 2025, STACK Jan 2025, TPG/Quantum filings), Dominion Energy 2024 IRP, PJM load forecast 2025, VEDP Biennial DCRSUT Report (Jan 2026), JLARC 2024 data center report.
+
+Data reflects public information available as of **May 2026**.
+
+---
+
+## Technical stack
+
+- **D3.js v7.8.5** — all map rendering, SVG panels, and data joins
+- **TopoJSON v3.0.2** — county and state boundary topology
+- **us-atlas v3** (CDN) — US counties TopoJSON at 1:10M scale
+- No build step, no bundler, no framework. Single HTML file deployable to any static host.
+
+---
+
+## Citation
+
+```
+Bieri, David (2026). Data Center Investment: Virginia & Maryland — Interactive Policy Map.
+School of Public and International Affairs, Virginia Tech. Blacksburg, VA.
+https://david-bieri.github.io/netzlast/
+```
+
+---
+
+## Contact
+
+David Bieri · Associate Professor of Regional Economics and Economic Geography  
+School of Public and International Affairs, Virginia Tech  
+[bieri@vt.edu](mailto:bieri@vt.edu)  
+Research: *"Who Pays for AI's Power Appetite? Virginia as the First AI Resource State"*
+
+---
+
+*Last updated: May 2026*
