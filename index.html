@@ -283,7 +283,7 @@ a{color:inherit}
     <option value="">All types</option>
     <option value="hyperscale">Hyperscale</option>
     <option value="ai-dense">AI / GPU</option>
-    <option value="wholesale">Wholesale colo</option>
+    <option value="wholesale">Wholesale developer</option>
     <option value="campus">Campus</option>
     <option value="speculative">Speculative</option>
   </select>
@@ -292,9 +292,17 @@ a{color:inherit}
   <button id="btnUtil" class="on" onclick="toggleLayer('util')">▦ Utility areas</button>
   <button id="btnDens" class="on" onclick="toggleLayer('dens')">⬡ Density</button>
   <button id="btnEst"  class="on" onclick="toggleLayer('est')">◇ Established</button>
-  <button id="btnGrid" class="on" onclick="toggleLayer('grid')">⚡ Grid lines</button>
+  <button id="btnGridAll" class="on" onclick="toggleGridAll()" title="Show/hide all grid layers">⚡ Grid</button>
+  <span style="display:inline-flex;gap:3px;align-items:center;flex-wrap:wrap">
+    <button id="btnGrid500"  class="on" onclick="toggleLayer('grid500')"  title="500kV backbone"    style="font-size:10px;padding:3px 7px">500kV</button>
+    <button id="btnGrid230"  class="on" onclick="toggleLayer('grid230')"  title="230kV regional"    style="font-size:10px;padding:3px 7px">230kV</button>
+    <button id="btnGridNew"  class="on" onclick="toggleLayer('gridNew')"  title="New / under construction" style="font-size:10px;padding:3px 7px">New</button>
+    <button id="btnGridProp" class="on" onclick="toggleLayer('gridProp')" title="Proposed (MPRP)"   style="font-size:10px;padding:3px 7px">Prop.</button>
+    <button id="btnGridGaps"            onclick="toggleLayer('gridGaps')" title="Coverage gap overlay" style="font-size:10px;padding:3px 7px">⚠ Gaps</button>
+  </span>
   <button id="btnMort" class="on" onclick="toggleLayer('mort')">▨ Reg. zones</button>
   <button id="btnChoro"        onclick="toggleLayer('choro')">◉ Risk map</button>
+  <button id="btnPlants"       onclick="toggleLayer('plants')">◆ Gen. plants</button>
   <div class="sep" role="separator"></div>
   <button onclick="rv()">Reset view</button>
 </div>
@@ -348,19 +356,32 @@ a{color:inherit}
     <div class="lr"><span style="width:12px;height:12px;border-radius:50%;background:#C47A20;opacity:0.22;border:1.5px dashed #B05F10;display:inline-block;flex-shrink:0" aria-hidden="true"></span>Density zone (NoVA 300+)</div>
     <div class="lr"><span style="width:12px;flex-shrink:0" aria-hidden="true">○</span>Circle size ∝ investment</div>
     <div class="lr" style="margin-top:5px"><span style="display:inline-block;width:18px;height:3px;background:#D97706;flex-shrink:0;margin-right:2px" aria-hidden="true"></span>500kV existing</div>
-    <div class="lr"><span style="display:inline-block;width:18px;height:3px;background:#F59E0B;border-top:2px dashed #F59E0B;flex-shrink:0;margin-right:2px" aria-hidden="true"></span>500kV new / planned</div>
-    <div class="lr"><span style="display:inline-block;width:18px;height:2px;background:#3B82F6;border-top:1.5px dashed #3B82F6;flex-shrink:0;margin-right:2px" aria-hidden="true"></span>230kV new</div>
-    <div class="lr"><span style="display:inline-block;width:18px;height:2px;background:#FDE68A;border-top:1.5px dashed #FDE68A;flex-shrink:0;margin-right:2px;opacity:0.8" aria-hidden="true"></span>500kV proposed (MPRP)</div>
-    <div class="lr"><span style="display:inline-block;width:7px;height:7px;background:#D97706;flex-shrink:0;margin-right:2px" aria-hidden="true"></span>Substation</div>
+    <div class="lr"><span style="display:inline-block;width:18px;height:3px;border-top:2px dashed #F59E0B;flex-shrink:0;margin-right:2px" aria-hidden="true"></span>500kV new / planned</div>
+    <div class="lr"><span style="display:inline-block;width:18px;height:2px;background:#1D4ED8;flex-shrink:0;margin-right:2px" aria-hidden="true"></span>230kV existing</div>
+    <div class="lr"><span style="display:inline-block;width:18px;height:2px;border-top:1.5px dashed #3B82F6;flex-shrink:0;margin-right:2px" aria-hidden="true"></span>230kV new</div>
+    <div class="lr"><span style="display:inline-block;width:18px;height:2px;border-top:1.5px dashed #FDE68A;flex-shrink:0;margin-right:2px;opacity:0.8" aria-hidden="true"></span>500kV proposed (MPRP)</div>
+    <div class="lr"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#D97706;flex-shrink:0;margin-right:2px" aria-hidden="true"></span>Substation (○ = step-down)</div>
+    <div class="lr" style="margin-top:4px"><span style="display:inline-block;width:12px;height:8px;background:#EA580C;opacity:0.20;border:1.5px dashed #C2410C;flex-shrink:0;margin-right:2px" aria-hidden="true"></span>Grid coverage gap (⚠ Gaps layer)</div>
+    <div class="lr" style="font-size:9px;color:var(--hint)">17 lines · Dominion, AEP, BGE, PEPCO</div>
     <div class="lr" style="margin-top:5px"><span style="display:inline-block;width:12px;height:8px;background:#DC2626;opacity:0.18;border:1px dashed #DC2626;flex-shrink:0;margin-right:2px" aria-hidden="true"></span>Data center moratorium</div>
     <div class="lr"><span style="display:inline-block;width:12px;height:8px;background:#D97706;opacity:0.18;border:1px dashed #D97706;flex-shrink:0;margin-right:2px" aria-hidden="true"></span>Contested zoning</div>
     <div class="lr" style="margin-top:5px"><span style="display:inline-block;width:24px;height:8px;border-radius:2px;background:linear-gradient(90deg,#D1FAE5,#FECACA);flex-shrink:0;margin-right:2px" aria-hidden="true"></span>◉ Risk score (county)</div>
+    <div class="lr" style="font-size:9.5px;font-weight:600;color:var(--muted);margin-top:8px;letter-spacing:.04em">◆ GENERATION PLANTS</div>
+    <div class="lr"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#FCD34D;flex-shrink:0;margin-right:2px;line-height:12px;text-align:center;font-size:7px;font-weight:700;color:var(--surface)" aria-hidden="true">N</span>Nuclear</div>
+    <div class="lr"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#0EA5E9;flex-shrink:0;margin-right:2px;line-height:12px;text-align:center;font-size:7px;font-weight:700;color:var(--surface)" aria-hidden="true">P</span>Pumped storage</div>
+    <div class="lr"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#F97316;flex-shrink:0;margin-right:2px;line-height:12px;text-align:center;font-size:7px;font-weight:700;color:var(--surface)" aria-hidden="true">G</span>Gas / CCGT</div>
+    <div class="lr"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#57534E;flex-shrink:0;margin-right:2px;line-height:12px;text-align:center;font-size:7px;font-weight:700;color:var(--surface)" aria-hidden="true">C</span>Coal (operating)</div>
+    <div class="lr"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#22D3EE;flex-shrink:0;margin-right:2px;line-height:12px;text-align:center;font-size:7px;font-weight:700;color:var(--surface)" aria-hidden="true">H</span>Hydro / run-of-river</div>
+    <div class="lr"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;background:#34D399;flex-shrink:0;margin-right:2px;line-height:12px;text-align:center;font-size:7px;font-weight:700;color:var(--surface)" aria-hidden="true">W</span>Offshore wind</div>
+    <div class="lr"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;border:1.5px dashed #78350F;flex-shrink:0;margin-right:2px" aria-hidden="true"></span>Retired plant</div>
+    <div class="lr"><span style="display:inline-block;width:12px;height:12px;border-radius:50%;border:1.5px dashed #34D399;flex-shrink:0;margin-right:2px" aria-hidden="true"></span>Under construction</div>
+    <div class="lr" style="font-size:9.5px;color:var(--hint)">Circle size ∝ capacity (MW) · hover for details</div>
   </div>
   <div class="lg" role="listitem">
     <p class="lh">Project type (● lower-left)</p>
     <div class="lr"><span class="ldot" style="background:#1E6091" aria-hidden="true"></span>Hyperscale (own-operate)</div>
     <div class="lr"><span class="ldot" style="background:#B91C1C" aria-hidden="true"></span>AI / GPU cluster</div>
-    <div class="lr"><span class="ldot" style="background:#16A085" aria-hidden="true"></span>Wholesale colo</div>
+    <div class="lr"><span class="ldot" style="background:#16A085" aria-hidden="true"></span>Wholesale developer</div>
     <div class="lr"><span class="ldot" style="background:#8E44AD" aria-hidden="true"></span>Multi-developer campus</div>
     <div class="lr"><span class="ldot" style="background:#78716C" aria-hidden="true"></span>Speculative / no tenant</div>
   </div>
@@ -452,12 +473,21 @@ a{color:inherit}
   <svg id="flashSvg" style="width:100%;overflow:visible" viewBox="0 0 860 288" preserveAspectRatio="xMidYMid meet"></svg>
 </div>
 
+<!-- ── Grid Metrics panel (G) ── -->
+<div style="margin-top:22px">
+  <div class="panel-hdr" style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px">
+    <span style="font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">Grid balance &amp; vulnerability — demand, supply mix, systemic risk</span>
+    <span style="font-size:9.5px;color:var(--hint)">Computed from active deals and operating generation · hover for details</span>
+  </div>
+  <svg id="gridMetricSvg" style="width:100%;overflow:visible" viewBox="0 0 860 230" preserveAspectRatio="xMidYMid meet"></svg>
+</div>
+
 <p class="footnote">Utility service territories are approximate county-level assignments based on primary utility; cooperative boundaries are especially irregular. Established campuses are a curated sample — Northern Virginia alone has 600+ total operational data centers. Sources: WSLS, VEDP, MD Commerce, Data Center Dynamics, Bisnow, Baltimore Banner, Maryland Matters, court filings, SEC filings (May 2026).</p>
 
 <!-- ── Footer ── -->
 <footer class="page-footer">
   <p>David Bieri · School of Public and International Affairs, Virginia Tech ·
-  <a href="mailto:bieri@vt.edu">bieri@vt.edu</a> ·
+  <a href="mailto:dbieri@vt.edu">dbieri@vt.edu</a> ·
   Research: "Who Pays for AI's Power Appetite? Virginia as the First AI Resource State" ·
   <a href="guide.html">User guide</a> ·
   <a href="https://github.com/david-bieri/netzlast" target="_blank" rel="noopener">GitHub</a></p>
@@ -581,7 +611,7 @@ const UC = {
 const TYPES = {
   'hyperscale': {lbl:'Hyperscale (own-operate)', short:'HS', c:'#1E6091'},
   'ai-dense':   {lbl:'AI / GPU cluster',          short:'AI', c:'#B91C1C'},
-  'wholesale':  {lbl:'Wholesale colo',             short:'WC', c:'#16A085'},
+  'wholesale':  {lbl:'Wholesale developer',             short:'WC', c:'#16A085'},
   'campus':     {lbl:'Multi-developer campus',     short:'MC', c:'#8E44AD'},
   'speculative':{lbl:'Speculative / no tenant',   short:'SP', c:'#78716C'},
 };
@@ -635,19 +665,198 @@ const GRID_LINES = [
    note:'~70-mile proposed line from Doubs SS (Frederick Co., MD) to northern Baltimore Co. Faces opposition from Frederick, Carroll and Baltimore counties. Required to serve Quantum Frederick and MD data center growth.',
    kv:500, status:'proposed', scc:'MD PSC 9773',
    coords:[[39.38,-77.47],[39.44,-77.25],[39.56,-77.01],[39.60,-76.80],[39.65,-76.68]]}
+,
+// ── WESTERN VA / GENERATION BACKBONE ──────────────────────────────────────
+  {id:'g8',
+   name:'500kV: Mt. Storm (WV) – Valley SS – Dooms SS (AEP/Dominion generation feed)',
+   note:'Mt. Storm Power Station (1,600 MW, Grant Co., WV) is the primary western generation source feeding Virginia. The 500kV line rebuilt under SCC PUR-2019-00049 (Augusta and Rockingham counties) links Mt. Storm through the Valley SS to Dooms SS in Augusta County.',
+   kv:500, status:'existing', scc:'PUR-2019-00049',
+   coords:[[39.07,-79.25],[38.65,-79.08],[38.40,-78.98],[38.07,-78.92]]},
+
+  {id:'g9',
+   name:'500kV: Dooms SS – Shenandoah Valley – Meadow Brook SS',
+   note:'North-bound 500kV corridor following the I-81/Shenandoah Valley from Dooms (Augusta Co.) to Meadow Brook (Frederick Co. VA). Connects western generation to the NoVA backbone. Parallel 230kV runs on the same corridor; SCC PUR-2024-00074 rebuilds the adjacent Dooms-Harrisonburg 230kV lines.',
+   kv:500, status:'existing', scc:'PUR-2024-00074',
+   coords:[[38.07,-78.92],[38.35,-78.75],[38.65,-78.52],[38.90,-78.32],[39.05,-78.25]]},
+
+  // ── CENTRAL VA / DOMINION N-S BACKBONE ─────────────────────────────────────
+  {id:'g10',
+   name:'500kV: Dooms SS – Charlottesville – Elmont SS (Piedmont corridor)',
+   note:'East-bound 500kV corridor from Dooms through the Virginia Piedmont toward the Richmond area. Elmont SS (Hanover County, near Ashland) is a key switching node feeding the Chickahominy-Elmont-Fredericksburg I-95 corridor and the data centre cluster in Stafford County.',
+   kv:500, status:'existing', scc:null,
+   coords:[[38.07,-78.92],[38.03,-78.48],[37.95,-78.05],[37.85,-77.65],[37.75,-77.43]]},
+
+  {id:'g11',
+   name:'500kV: Chickahominy SS – Elmont SS – Fredericksburg – Possum Point (N-S backbone)',
+   note:'Primary N-S 500kV backbone feeding data centre load from Richmond toward NoVA. Chickahominy SS (Charles City Co.) to Elmont SS (Hanover Co.) is a 28-mile existing 500kV line being rebuilt. Elmont to Fredericksburg is being upgraded under a new SCC case to 500/230kV double-circuit. Terminates at Possum Point (Prince William Co.) where it crosses the Potomac.',
+   kv:500, status:'existing', scc:'PUR-2025-00077',
+   coords:[[37.32,-77.02],[37.55,-77.22],[37.75,-77.43],[38.00,-77.44],[38.30,-77.45],[38.42,-77.36],[38.54,-77.27]]},
+
+  // ── SOUTHSIDE VA / AEP ──────────────────────────────────────────────────────
+  {id:'g12',
+   name:'AEP 138kV: Cloverdale SS – Ridgeway SS – Danville / Berry Hill (Southside VA)',
+   note:'AEP Appalachian Power serves Pittsylvania County at 138kV through the Ridgeway SS (Henry Co.) and Danville-area feeders. The Berry Hill project requires AEP to guarantee 299 MW by end 2028 — likely necessitating new 230kV infrastructure or major upgrades to existing 138kV capacity. AEP\'s Danville Area Transmission Rebuild (in service 2025) upgraded 3 miles of 138kV line in Pittsylvania County. Cloverdale SS (Botetourt Co.) is AEP\'s major Roanoke-area 500kV hub.',
+   kv:230, status:'existing', scc:null,
+   coords:[[37.45,-79.85],[37.00,-79.88],[36.69,-79.87],[36.62,-79.60],[36.78,-79.47]]},
+
+  // ── MORRISVILLE → WISHING STAR (NEW 500kV, filed Feb 2026) ─────────────────
+  {id:'g16',
+   name:'500kV: Morrisville SS – Prince William – Wishing Star SS (filed Feb 27, 2026)',
+   note:'New 500kV line from Morrisville SS (S. Fauquier Co.) through the existing corridor in Prince William County to Wishing Star SS near Arcola in Loudoun County. Filed with SCC Feb 27, 2026. The 4.8-mile Loudoun segment is a "wreck and rebuild" replacing lattice towers with monopoles supporting existing plus new 500kV and 230kV circuits. Distinct from the Golden-Mars-Wishing Star loop (g3).',
+   kv:500, status:'new', scc:'SCC 2026 (filed Feb 2026)',
+   coords:[[38.55,-77.75],[38.65,-77.68],[38.78,-77.60],[38.91,-77.55]]},
+
+  // ── ADDITIONAL NOVA 230kV ───────────────────────────────────────────────────
+  {id:'g17',
+   name:'230kV: Apollo–Twin Creek–Sycolin ring (Loudoun, PUR-2024-00044)',
+   note:'New 230kV ring in eastern Loudoun County directly serving the Ashburn-Sterling data centre cluster. Apollo SS, Twin Creek SS, and Sycolin SS are the three nodes. Distinct from the Aspen-Golden 500kV projects to the northwest.',
+   kv:230, status:'new', scc:'PUR-2024-00044',
+   coords:[[39.10,-77.59],[39.07,-77.55],[39.04,-77.52],[39.01,-77.47]]},
+
+  // ── MARYLAND BGE ────────────────────────────────────────────────────────────
+  {id:'g13',
+   name:'BGE 500kV: Calvert Cliffs – Waugh Chapel SS (nuclear backbone)',
+   note:'500kV line from Calvert Cliffs Nuclear Power Plant (1,756 MW, Calvert Co.) north to the Waugh Chapel SS (Anne Arundel Co.). Primary BGE backbone feeding central Maryland load including the Frederick County corridor (Quantum Frederick). A parallel line runs Calvert Cliffs to Chalk Point (PG County).',
+   kv:500, status:'existing', scc:null,
+   coords:[[38.43,-76.44],[38.65,-76.52],[38.88,-76.60],[39.07,-76.70]]},
+
+  {id:'g14',
+   name:'BGE 230kV: Baltimore area – Westminster – Frederick Co. / Doubs SS',
+   note:'BGE 230kV corridor running west from the Baltimore area through Carroll County (Westminster) to Frederick County. Terminates at or near Doubs SS — the southern origin point of the proposed MPRP (g7). Data centre growth at Quantum Frederick has increased load on this corridor, driving the MPRP justification.',
+   kv:230, status:'existing', scc:null,
+   coords:[[39.29,-76.62],[39.35,-76.85],[39.42,-77.05],[39.42,-77.22],[39.38,-77.47]]},
+
+  // ── PEPCO MARYLAND ──────────────────────────────────────────────────────────
+  {id:'g15',
+   name:'PEPCO 230kV: Chalk Point SS – Prince George\'s Co. – Montgomery Co.',
+   note:'PEPCO 230kV backbone from Chalk Point (PG County, on the Patuxent River) north through Prince George\'s County and into Montgomery County. Serves the load areas hosting both Brightseat Tech Park (PG County, 820 MW contested) and the Dickerson project (Montgomery County, former Pepco coal plant). The Dickerson site already has 230kV infrastructure from its coal plant era.',
+   kv:230, status:'existing', scc:null,
+   coords:[[38.53,-76.68],[38.65,-76.78],[38.80,-76.85],[38.93,-76.88],[39.02,-77.02],[39.19,-77.40]]},
+
+  {id:'g18', name:'500kV: Surry Nuclear – Skiffes Creek – Chickahominy',
+   note:'Surry Nuclear (1,676 MW, Surry Co.) feeds 500kV across the James River to Skiffes Creek SS (James City Co.) — SCC PUE-2012-00029, approved 2015 after 13 years. Skiffes Creek distributes northward to the Chickahominy backbone and southeast to Hampton Roads.', kv:500, status:'existing', scc:'PUE-2012-00029',
+   coords:[[37.17,-76.70],[37.25,-76.68],[37.30,-76.85],[37.32,-77.02]]},
+
+  {id:'g19', name:'230kV: Skiffes Creek SS – Whealton SS (Hampton Roads)',
+   note:'230kV from Skiffes Creek south-east to Whealton SS (Newport News), serving the Hampton Roads MSA (1.8 million). PUE-2012-00029 scope.', kv:230, status:'existing', scc:'PUE-2012-00029',
+   coords:[[37.25,-76.68],[37.15,-76.55],[37.07,-76.42]]},
+
+  {id:'g20', name:'500kV: North Anna Nuclear – Elmont SS (central VA backbone)',
+   note:'North Anna Nuclear (1,892 MW, Louisa Co.) is the dominant inland generation source for central VA and NoVA peak load. The 500kV south to Elmont SS (Hanover Co.) joins the N-S backbone feeding data-centre load in Stafford, Spotsylvania, and Loudoun.', kv:500, status:'existing', scc:null,
+   coords:[[38.03,-77.79],[37.90,-77.60],[37.75,-77.43]]},
+
+  {id:'g26', name:'230kV: North Anna Nuclear – Louisa/Caroline (REC data-centre zone)',
+   note:'230kV from North Anna feeds the REC service territory (Louisa and Caroline counties) hosting EdgeCore Louisa (1.1 GW) and CleanArc VA1 (900 MW). REC headroom at GW-scale is ultimately constrained by this corridor\'s capacity to carry North Anna output.', kv:230, status:'existing', scc:null,
+   coords:[[38.03,-77.79],[37.97,-77.93],[37.88,-77.28]]},
+
+  {id:'g21', name:'500kV: Bath County Pumped Storage – Dooms SS',
+   note:'Bath County Pumped Storage (3,003 MW, Bath Co.) connects east to Dooms SS (Augusta Co.). Primary grid peaker for Dominion Virginia, charging overnight from nuclear baseload and discharging daytime peaks. The near-flat 24h data-centre load profile fundamentally alters its economic dispatch role.', kv:500, status:'existing', scc:null,
+   coords:[[38.07,-79.65],[38.10,-79.30],[38.07,-78.92]]},
+
+  {id:'g22', name:'AEP 765kV: Jacksons Ferry SS (WV border) – Cloverdale SS (Roanoke hub)',
+   note:'AEP Appalachian Power 765kV backbone — among the highest-voltage lines in the eastern US. Runs from Jacksons Ferry SS (Giles Co., VA) to Cloverdale SS (Botetourt Co.), the main 765↚500↚230kV step-down hub. Berry Hill depends on power traversing this corridor before reaching the 138kV Danville feeders. AEP spent $237M upgrading Cloverdale (2014-17).', kv:765, status:'existing', scc:null,
+   coords:[[37.46,-80.80],[37.30,-80.35],[37.45,-79.85]]},
+
+  {id:'g23', name:'500kV: Elko SS – Southside VA – Unity SS Mecklenburg (southern Dominion loop)',
+   note:'Southbound 500kV completing the eastern segment of Dominion\'s Virginia loop — Elko SS (Chesterfield Co.) through Southside to Unity 500-230kV Switching Station (Mecklenburg Co., SCC PUR-2022-00167). Closes the loop distributing Surry Nuclear and Bath County generation across Southside Virginia.', kv:500, status:'existing', scc:'PUR-2022-00167',
+   coords:[[37.35,-77.40],[37.08,-77.58],[36.88,-77.90],[36.68,-78.22],[36.65,-78.50]]},
+
+  {id:'g25', name:'500kV: Unity SS – Virginia/NC border (PJM–SERC interface)',
+   note:'Dominion–Duke Energy Carolinas 500kV interconnection at the VA-NC state line (Mecklenburg/Warren Co. NC). PJM-SERC interchange point allowing interstate power trading. Typically southbound in summer, northbound in winter.', kv:500, status:'existing', scc:null,
+   coords:[[36.65,-78.50],[36.58,-78.52],[36.54,-78.51],[36.42,-78.50]]},
+
+  {id:'g24', name:'500kV: Conowingo Hydro – Graceton SS – BGE Baltimore (PJM northern interface)',
+   note:'Conowingo Hydroelectric Dam (572 MW, Susquehanna River, Harford/Cecil Co. boundary) connects south to Graceton SS (BGE, Harford Co.) and the Baltimore backbone. Key PJM N-S transfer corridor between Pennsylvania and Maryland/DC. Approaching thermal limits under projected data-centre load growth, partly driving MPRP need.', kv:500, status:'existing', scc:null,
+   coords:[[39.66,-76.17],[39.55,-76.30],[39.25,-76.62]]},
+
+  // ── WEST VIRGINIA ──────────────────────────────────────────────────────────
+  {id:'g27',
+   name:'AEP 765kV: Jacksons Ferry SS – Wyoming Station (West Virginia)',
+   note:'Continues west from Jacksons Ferry SS (Giles Co., VA) to Wyoming Station (Wyoming Co., WV) — AEP\'s primary bulk generation hub. Wyoming County hosts major coal-fired and storage facilities feeding the PJM ATSI zone. This corridor is the origin of virtually all power flowing east through the AEP 765kV backbone into Virginia.',
+   kv:765, status:'existing', scc:null,
+   coords:[[37.46,-80.80],[37.50,-81.05],[37.57,-81.35],[37.60,-81.55]]},
+
+  // ── NORTH CAROLINA (2 additional crossings) ────────────────────────────────
+  {id:'g28',
+   name:'500kV: Halifax/Clover – Warren Co. NC (Dominion–Duke Energy Carolinas, central)',
+   note:'Dominion–Duke Energy Carolinas 500kV interconnection through the Halifax County corridor. The Clover coal plant (Halifax Co., 1,357 MW, retired 2023) transmission infrastructure remains active as an interstate tie line. Multiple parallel circuits through this area enable substantial PJM–SERC power trading, particularly southbound during summer peaks.',
+   kv:500, status:'existing', scc:null,
+   coords:[[36.88,-78.73],[36.70,-78.68],[36.54,-78.57],[36.42,-78.52]]},
+
+  {id:'g29',
+   name:'230kV: Isle of Wight/Chesapeake – Gates Co. NC (Dominion–Duke Energy Progress, NE)',
+   note:'Dominion Energy–Duke Energy Progress 230kV interconnection in the northeastern Virginia–North Carolina corridor. Serves as PJM–SERC interface for coastal Virginia and the Outer Banks/northeastern NC load zone. Duke Energy Progress serves most of eastern and central NC from this corridor.',
+   kv:230, status:'existing', scc:null,
+   coords:[[36.75,-77.00],[36.62,-76.90],[36.50,-76.78],[36.40,-76.68]]},
+
+  // ── TENNESSEE ──────────────────────────────────────────────────────────────
+  {id:'g30',
+   name:'AEP 230kV: Abingdon SS (VA) – Bristol – Sullivan Co. TN (AEP–TVA interface)',
+   note:'AEP Appalachian Power connection to TVA (Tennessee Valley Authority) at the Virginia–Tennessee border near Bristol. AEP serves the Virginia Coalfields (Lee, Wise, Buchanan, Scott, Tazewell, and Washington counties) from this Abingdon–Bristol corridor. The interchange enables emergency support between PJM and TVA and powers the Kingsport–Johnson City–Bristol tri-city metro (~300,000 people).',
+   kv:230, status:'existing', scc:null,
+   coords:[[36.71,-81.97],[36.62,-82.17],[36.52,-82.42]]},
+
+  // ── KENTUCKY ───────────────────────────────────────────────────────────────
+  {id:'g31',
+   name:'AEP/KU 138kV: Grundy (VA) – Pike Co. KY (AEP–Kentucky Utilities interface)',
+   note:'AEP Appalachian Power–Kentucky Utilities (LG&E-KU / PPL subsidiary) connection from Buchanan County, VA (Grundy area) northwest into Pike County, KY. Operates at 138kV — the Appalachian coal-country grid is lower voltage than the coastal 500kV backbone. Connects Dominion\'s PJM zone with the Kentucky Utilities PJM zone across the Appalachian coalfields.',
+   kv:230, status:'existing', scc:'PUR-2020-00110',
+   coords:[[37.28,-82.09],[37.38,-82.30],[37.48,-82.52]]},
+
+  // ── PENNSYLVANIA ───────────────────────────────────────────────────────────
+  {id:'g32',
+   name:'500kV: Conowingo Dam – Peach Bottom SS (Maryland–Pennsylvania PJM backbone)',
+   note:'500kV north from Conowingo Hydro (Harford Co., MD, 572 MW) across the Susquehanna River into York/Lancaster County, PA, connecting to Peach Bottom Atomic Power Station (2,772 MW nuclear, PSEG). This is a key PJM north–south bulk transfer corridor — carrying Pennsylvania nuclear generation south to Maryland/DC data-centre load. The corridor is approaching thermal limits as Maryland data-centre demand grows, partly driving the MPRP justification.',
+   kv:500, status:'existing', scc:null,
+   coords:[[39.66,-76.17],[39.72,-76.22],[39.80,-76.27]]},
+
+  // ── MARYLAND (Potomac River crossing from VA) ───────────────────────────────
+  {id:'g34',
+   name:'500kV: Possum Point SS (VA) – Indian Head / Maryland (Potomac crossing)',
+   note:'500kV crosses the Potomac River northward from Possum Point SS (Prince William Co., VA) into Charles County, MD. This is the primary 500kV bridge between the Virginia backbone and Maryland\'s BGE/PEPCO transmission system, feeding DC-area and suburban Maryland loads. The crossing is a PJM-monitored congestion point during high-demand summer periods.',
+   kv:500, status:'existing', scc:null,
+   coords:[[38.54,-77.27],[38.62,-77.20],[38.72,-77.12]]}
+
 ];
 
 const SUBSTATIONS = [
-  {name:'Loudoun SS',        lat:39.050, lng:-77.548, kv:500, status:'existing'},
-  {name:'Meadow Brook SS',   lat:39.120, lng:-78.118, kv:500, status:'existing'},
-  {name:'Possum Point SS',   lat:38.542, lng:-77.265, kv:500, status:'existing'},
-  {name:'Doubs SS',          lat:39.382, lng:-77.470, kv:500, status:'existing'},
-  {name:'Golden SS',         lat:39.042, lng:-77.563, kv:500, status:'new'},
-  {name:'Mars SS',           lat:38.968, lng:-77.572, kv:500, status:'new'},
-  {name:'Aspen SS',          lat:39.088, lng:-77.638, kv:500, status:'new'},
+  {name:'Loudoun SS',       lat:39.050, lng:-77.548, kv:500, status:'existing', stepDown:true,  cx:4},
+  {name:'Meadow Brook SS',  lat:39.120, lng:-78.118, kv:500, status:'existing', stepDown:true,  cx:2},
+  {name:'Possum Point SS',  lat:38.542, lng:-77.265, kv:500, status:'existing', stepDown:true,  cx:3},
+  {name:'Doubs SS',         lat:39.382, lng:-77.470, kv:500, status:'existing', stepDown:false, cx:1},
+  {name:'Valley SS',        lat:38.400, lng:-78.980, kv:500, status:'existing', stepDown:true,  cx:2},
+  {name:'Elmont SS',        lat:37.750, lng:-77.430, kv:500, status:'existing', stepDown:true,  cx:2},
+  {name:'Chickahominy SS',  lat:37.320, lng:-77.020, kv:500, status:'existing', stepDown:true,  cx:2},
+  {name:'Cloverdale SS',    lat:37.450, lng:-79.850, kv:500, status:'existing', stepDown:true,  cx:2},
+  {name:'Calvert Cliffs',   lat:38.430, lng:-76.440, kv:500, status:'existing', stepDown:false, cx:2},
+  {name:'Waugh Chapel SS',  lat:39.070, lng:-76.700, kv:500, status:'existing', stepDown:true,  cx:2},
+  {name:'Golden SS',        lat:39.042, lng:-77.563, kv:500, status:'new',      stepDown:true,  cx:3},
+  {name:'Mars SS',          lat:38.968, lng:-77.572, kv:500, status:'new',      stepDown:false, cx:2},
+  {name:'Aspen SS',         lat:39.088, lng:-77.638, kv:500, status:'new',      stepDown:true,  cx:2},
+  {name:'Morrisville SS',   lat:38.550, lng:-77.750, kv:500, status:'new',      stepDown:false, cx:2},
+  {name:'Wishing Star SS',  lat:38.910, lng:-77.550, kv:500, status:'new',      stepDown:true,  cx:3},
+  {name:'Ridgeway SS',      lat:36.690, lng:-79.870, kv:230, status:'existing', stepDown:false, cx:1},
+  {name:'Chalk Point SS',   lat:38.530, lng:-76.680, kv:230, status:'existing', stepDown:false, cx:2},
+  // ── Expanded geographic coverage ──────────────────────────────────────────
+  {name:'Surry Nuclear SS',   lat:37.170, lng:-76.700, kv:500, status:'existing', stepDown:false, cx:2},
+  {name:'Skiffes Creek SS',   lat:37.250, lng:-76.680, kv:500, status:'existing', stepDown:true,  cx:3},
+  {name:'Whealton SS',        lat:37.070, lng:-76.420, kv:230, status:'existing', stepDown:false, cx:1},
+  {name:'North Anna Nuclear', lat:38.030, lng:-77.790, kv:500, status:'existing', stepDown:true,  cx:3},
+  {name:'Bath County PS',     lat:38.070, lng:-79.650, kv:500, status:'existing', stepDown:true,  cx:2},
+  {name:'Jacksons Ferry SS',  lat:37.460, lng:-80.800, kv:765, status:'existing', stepDown:true,  cx:2},
+  {name:'Unity SS',           lat:36.650, lng:-78.500, kv:500, status:'existing', stepDown:true,  cx:3},
+  {name:'Conowingo Dam',      lat:39.660, lng:-76.170, kv:500, status:'existing', stepDown:false, cx:2},
+  {name:'Graceton SS',        lat:39.550, lng:-76.300, kv:500, status:'existing', stepDown:true,  cx:2},
+  // ── Interstate border substations ─────────────────────────────────────────
+  {name:'Wyoming Station WV',  lat:37.600, lng:-81.550, kv:765, status:'existing', stepDown:false, cx:2},
+  {name:'Abingdon SS',         lat:36.710, lng:-81.970, kv:230, status:'existing', stepDown:true,  cx:2},
+  {name:'Bristol SS (VA/TN)',  lat:36.610, lng:-82.170, kv:230, status:'existing', stepDown:true,  cx:2},
+  {name:'Grundy area SS',      lat:37.280, lng:-82.090, kv:230, status:'existing', stepDown:false, cx:2},
+  {name:'Peach Bottom SS (PA)',lat:39.800, lng:-76.270, kv:500, status:'existing', stepDown:false, cx:2}
 ];
 
 const GC = {
+  765: {existing:'#78350F'},
   500: {existing:'#D97706', new:'#F59E0B', proposed:'#FDE68A'},
   230: {existing:'#1D4ED8', new:'#3B82F6'},
 };
@@ -722,13 +931,90 @@ const CHORO = {
 // Color scale: mint (low risk) → rose (high risk)
 const choroColor = t => d3.interpolateRgb('#D1FAE5','#FECACA')(Math.min(t,13)/13);
 
+
+const GAPS = {
+  '51107': {level:3, label:'Critical — grid saturation',
+            note:'Eastern Loudoun: 7 GW+ in planning/construction; Dominion paused new ESAs in 2022; five new 500kV substations under construction. Highest data-centre grid concentration globally.'},
+  '51143': {level:3, label:'Critical — voltage class mismatch',
+            note:'Pittsylvania (Berry Hill): AEP serves at 138kV — two voltage classes below what GW-scale AI data centres require. The 299 MW contingency requires new 230kV infrastructure through Ridgeway SS.'},
+  '51179': {level:2, label:'Elevated — merger contingency',
+            note:'Stafford Co.: STACK Stafford\'s six 300 MW substation commitments contingent on Dominion NextEra merger outcome. If merger changes IRP priorities, substation timelines slip.'},
+  '24021': {level:2, label:'Elevated — MPRP dependency',
+            note:'Frederick Co. MD: Quantum Frederick (2.4 GW) requires the MPRP 500kV line. MD PSC Case 9773 faces opposition from three counties. If MPRP is denied, campus buildout is transmission-constrained.'},
+  '51153': {level:1, label:'Moderate — corridor contested',
+            note:'Prince William Co.: Court-voided PW Digital Gateway rezoning and community opposition limit new 500kV/230kV rights-of-way. New large projects face significant regulatory hurdles.'},
+  '24031': {level:1, label:'Moderate — moratorium + gap',
+            note:'Montgomery Co. MD: Dickerson (former Pepco coal plant) has 230kV infrastructure but faces county moratorium through 2026. 80% self-generation requirement proposal suggests capacity concern.'},
+  '51033': {level:1, label:'Moderate — cooperative headroom',
+            note:'Caroline Co.: CleanArc 900 MW on REC cooperative grid. REC serves ~175,000 customers; 900 MW ≈ 5× existing peak load. REC has no public interconnection capacity statement.'},
+  '24033': {level:2, label:'Elevated — moratorium + Pepco backbone constraint',
+            note:'Prince George\'s Co. (Brightseat): active county moratorium (Sep 2025). PEPCO 230kV feeds from Chalk Point serve the area but the moratorium has halted interconnection proceedings. 820 MW campus in limbo pending task force outcome.'},
+  '24005': {level:1, label:'Moderate — MPRP transmission dependency',
+            note:'Baltimore Co. (Woodlawn, 150 MW): BGE territory; no signed interconnection. The MPRP (g7) is partly justified by new load growth in this corridor. Project depends on BGE capacity expansion currently under MD PSC review.'},
+  '51113': {level:1, label:'Moderate — no interconnection signed',
+            note:'Louisa Co.: EdgeCore 1.1 GW announced on REC grid with no interconnection agreement signed as of May 2026. Same REC headroom concern as Caroline County.'},
+};
+const GAP_STYLE = {
+  1:{fill:'#F59E0B',stroke:'#D97706',fillOp:0.11,strokeOp:0.48,strokeW:1.5,dash:'10,6'},
+  2:{fill:'#EA580C',stroke:'#C2410C',fillOp:0.15,strokeOp:0.58,strokeW:2.0,dash:'6,3'},
+  3:{fill:'#DC2626',stroke:'#B91C1C',fillOp:0.20,strokeOp:0.68,strokeW:2.5,dash:'3,2'},
+};
+
+
+/* ── Power generation plants ─────────────────────────────────────────────── */
+const PT = {
+  'nuclear':     {c:'#FCD34D', lbl:'Nuclear',        sw:2.0},
+  'coal':        {c:'#57534E', lbl:'Coal',            sw:1.5},
+  'gas':         {c:'#F97316', lbl:'Gas / CCGT',      sw:1.5},
+  'pumped-hydro':{c:'#0EA5E9', lbl:'Pumped storage',  sw:1.8},
+  'hydro':       {c:'#22D3EE', lbl:'Hydro',           sw:1.5},
+  'wind-off':    {c:'#34D399', lbl:'Offshore wind',   sw:1.5},
+  'wind-on':     {c:'#86EFAC', lbl:'Onshore wind',    sw:1.5},
+};
+
+const POWER_PLANTS = [
+  // Virginia
+  {n:'Bath County PS',       lat:38.192,lng:-79.804, mw:3003, t:'pumped-hydro', s:'operating',    ow:'Dominion',
+   note:'3,003 MW pumped-storage, Bath Co. Charges from North Anna nuclear overnight; discharges at peak. Data-centre flat-load profile disrupts this dispatch role.'},
+  {n:'CVOW Phase 1',         lat:36.97, lng:-75.08,  mw:2600, t:'wind-off',    s:'construction',  ow:'Dominion',
+   note:'Coastal Virginia Offshore Wind Phase 1: 2,637 MW, 176 turbines, ~27 miles off Virginia Beach. Projected online 2026. Dominion positions CVOW as primary data-centre clean-power supply.'},
+  {n:'North Anna Nuclear',   lat:38.064,lng:-77.788, mw:1892, t:'nuclear',     s:'operating',    ow:'Dominion',
+   note:'1,892 MW (Units 1 & 2), Louisa Co. on Lake Anna. Primary baseload for central VA and NoVA data-centre load. Units 3 & 4 (2\xd71,455 MW) in long-range planning.'},
+  {n:'Possum Point CCGT',    lat:38.518,lng:-77.228, mw:1728, t:'gas',         s:'operating',    ow:'Dominion',
+   note:'1,728 MW combined-cycle gas, Prince William Co. Former coal site; gas conversion completed 2019. Collocated with Possum Point 500kV switching station on the Potomac.'},
+  {n:'Surry Nuclear',        lat:37.150,lng:-76.688, mw:1676, t:'nuclear',     s:'operating',    ow:'Dominion',
+   note:'1,676 MW (Units 1 & 2), Surry Co. on the James River. Source of the Surry\u2013Skiffes Creek 500kV James River crossing project (SCC PUE-2012-00029).'},
+  {n:'Warren County CCGT',   lat:38.920,lng:-78.270, mw:1503, t:'gas',         s:'operating',    ow:'Dominion',
+   note:'1,503 MW combined-cycle gas, Warren Co. (near Front Royal). Part of Dominion\'s post-coal gas buildout serving the Shenandoah Valley and northern Virginia loads.'},
+  {n:'Chesterfield CCGT',    lat:37.340,lng:-77.520, mw:1458, t:'gas',         s:'operating',    ow:'Dominion',
+   note:'~1,458 MW combined-cycle gas, Chesterfield Co. Former coal site; coal units retired, CCGT added. Adjacent to Google\'s Chesterfield data-centre campus.'},
+  {n:'Clover Power Station',  lat:36.880,lng:-78.730, mw:1357, t:'coal',        s:'retired',      ow:'Dominion',
+   note:'1,357 MW coal, Halifax Co. RETIRED 2023. Transmission corridor remains as interstate tie to Duke Energy Carolinas (g28). Retirement eliminated ~7.5 Mt CO\u2082/yr.'},
+  {n:'Ladysmith Energy Ctr', lat:37.982,lng:-77.450,  mw:748, t:'gas',         s:'operating',    ow:'Dominion',
+   note:'748 MW combined-cycle gas, Caroline Co. (commissioned 2020). Located in the REC service territory \u2014 same corridor as CleanArc VA1 (900 MW) and EdgeCore Louisa (1.1 GW). Gas peaker for the data-centre zone.'},
+  // Maryland
+  {n:'Calvert Cliffs Nuclear', lat:38.450, lng:-76.453, mw:1756, t:'nuclear',     s:'operating',    ow:'Constellation',
+   note:'1,756 MW (Units 1 & 2), Calvert Co. on Chesapeake Bay. BGE territory baseload. Primary reason MPRP (g7) can be justified at 500kV voltage class.'},
+  {n:'Morgantown Generating', lat:38.362,lng:-76.985, mw:1149, t:'gas',         s:'operating',    ow:'NRG Energy',
+   note:'1,149 MW gas/oil peaker fleet, Charles Co. MD on the Potomac River. Seasonal dispatch; PEPCO/BGE system support during summer peak and emergency.'},
+  {n:'Conowingo Dam',         lat:39.642,lng:-76.158,  mw:572, t:'hydro',       s:'operating',    ow:'Constellation',
+   note:'572 MW run-of-river hydro, Susquehanna River (Harford/Cecil Co. MD). Licensed through 2053. Key PJM N-S transfer node and environmental flashpoint (sediment management).'},
+  // Out of state — major feeds into VA/MD grid
+  {n:'Peach Bottom Nuclear',  lat:39.756,lng:-76.269, mw:2772, t:'nuclear',     s:'operating',    ow:'PSEG',
+   note:'2,772 MW (Units 2 & 3), York/Lancaster Co. PA. PSEG Nuclear / Constellation. Major PJM North generation source; power flows south via Conowingo corridor to MD/VA data-centre loads.'},
+  {n:'Mt. Storm Power',       lat:39.072,lng:-79.249, mw:1600, t:'coal',        s:'operating',    ow:'FirstEnergy',
+   note:'1,600 MW coal, Grant Co. WV. Direct 500kV feed south to Dominion\'s Dooms SS (g8). Primary western Virginia generation source. Units at risk from EPA MATS requirements.'},
+  {n:'Wyoming Station (AEP)', lat:37.618,lng:-81.540, mw:2000, t:'coal',        s:'operating',    ow:'AEP',
+   note:'~2,000 MW coal complex, Wyoming Co. WV. AEP\'s primary bulk generation hub in the Appalachian coalfields, feeding the 765kV backbone east to Cloverdale (g22/g27). The upstream generation Berry Hill depends on.'},
+];
+
 const SC  = {Active:'#1D9E75',Dead:'#888780',Contested:'#EF9F27',Announced:'#378ADD'};
 const SBCLS = {Active:'b-active',Dead:'b-dead',Contested:'b-contested',Announced:'b-announced'};
 const UR  = {Dominion:{c:'#185FA5',d:''},BGE:{c:'#534AB7',d:''},Pepco:{c:'#854F0B',d:'5,3'},REC:{c:'#0F6E56',d:'2,3'},AEP:{c:'#B03A30',d:'3,2'}};
 const gr  = iv => Math.max(4.5, Math.sqrt(iv || 0) * 3.2);
 
 /* ── Layer state ─────────────────────────────────────────────────────── */
-const LY = {util:true, dens:true, est:true, grid:true, mort:true, choro:false};
+const LY = {util:true, dens:true, est:true, grid500:true, grid230:true, gridNew:true, gridProp:true, gridGaps:false, mort:true, choro:false, plants:false};
 let showPueEst = false;
 let capMetric    = 'mw';
 let pipSort      = 'yr_ann';
@@ -742,7 +1028,7 @@ function toggleLayer(k) {
   LY[k] = !LY[k];
   document.getElementById('btn' + k.charAt(0).toUpperCase() + k.slice(1))
           .classList.toggle('on', LY[k]);
-  ({util:gUtil, dens:gDens, est:gEst, grid:gGrid, mort:gMort, choro:gChoro})[k].style('display', LY[k] ? null : 'none');
+  ({util:gUtil, dens:gDens, est:gEst, grid500:gGrid500, grid230:gGrid230, gridNew:gGridNew, gridProp:gGridProp, gridGaps:gGaps, mort:gMort, choro:gChoro, plants:gPlants})[k].style('display', LY[k] ? null : 'none');
 }
 
 /* ── SVG setup ───────────────────────────────────────────────────────── */
@@ -754,7 +1040,13 @@ const gChoro = gAll.append('g');
 const gMort  = gAll.append('g');
 const gUtil = gAll.append('g');
 const gBord = gAll.append('g');
-const gGrid = gAll.append('g');
+const gGaps    = gAll.append('g');
+const gGrid230 = gAll.append('g');
+const gGridProp= gAll.append('g');
+const gGrid500 = gAll.append('g');
+const gGridNew = gAll.append('g');  // new/planned lines (all voltages)
+const gGridSub = gAll.append('g');  // substation nodes — always above lines
+const gPlants= gAll.append('g');  // power generation stations
 const gLbl  = gAll.append('g');
 const gDens = gAll.append('g');
 const gEst  = gAll.append('g');
@@ -841,6 +1133,25 @@ function showMortTT(e, mc) {
     <p style="font-size:11px;color:var(--muted);margin:5px 0;line-height:1.45">${mc.note}</p>
     <span class="tt-tag" style="background:${bg};color:${fc}">${mc.status==='moratorium'?'Moratorium':'Contested zoning'}</span>`;
 }
+function showGapTT(e, gap) {
+  const lc = {1:'#B45309', 2:'#C2410C', 3:'#B91C1C'};
+  posTT(e); ttEl.style.display='block';
+  ttEl.innerHTML = `<p class="tt-n">Grid coverage gap</p>
+    <p style="font-size:11px;font-weight:600;color:${lc[gap.level]};margin:4px 0">${gap.label}</p>
+    <p style="font-size:10.5px;color:var(--muted);line-height:1.45;margin-top:4px">${gap.note}</p>`;
+}
+function showPlantTT(e, p) {
+  const pt = PT[p.t] || {c:'#888', lbl:p.t};
+  const scol = {operating:'#16A085', retired:'#888780', construction:'#EF9F27'}[p.s] || '#888';
+  const slbl = {operating:'Operating', retired:'Retired', construction:'Under construction'}[p.s] || p.s;
+  posTT(e); ttEl.style.display='block';
+  ttEl.innerHTML=`<p class="tt-n">${p.n}</p>
+    <div class="tt-r"><span class="tt-l">Capacity</span><span class="tt-v">${p.mw.toLocaleString()} MW</span></div>
+    <div class="tt-r"><span class="tt-l">Type</span><span class="tt-v" style="color:${pt.c}">${pt.lbl}</span></div>
+    <div class="tt-r"><span class="tt-l">Owner</span><span class="tt-v">${p.ow}</span></div>
+    <div class="tt-r"><span class="tt-l">Status</span><span class="tt-v" style="color:${scol}">${slbl}</span></div>
+    <p style="font-size:10.5px;color:var(--muted);margin:5px 0 0;line-height:1.4">${p.note}</p>`;
+}
 function showGridTT(e, line) {
   const sl = {existing:'Existing',new:'New / under construction',proposed:'Proposed (contested)'};
   posTT(e); ttEl.style.display = 'block';
@@ -875,6 +1186,22 @@ function showDetail(d) {
 
 /* ── Deal filter & render ────────────────────────────────────────────── */
 let fp = [...DEALS];
+function toggleGridAll() {
+  const tiers = ['grid500','grid230','gridNew','gridProp'];
+  const anyOn = tiers.some(t => LY[t]);
+  const next  = !anyOn;
+  tiers.forEach(t => {
+    LY[t] = next;
+    const btn = document.getElementById('btn' + t.charAt(0).toUpperCase() + t.slice(1));
+    if (btn) btn.classList.toggle('on', next);
+  });
+  gGrid500.style('display', next ? null : 'none');
+  gGrid230.style('display', next ? null : 'none');
+  gGridNew.style('display', next ? null : 'none');
+  gGridProp.style('display', next ? null : 'none');
+  gGridSub.style('display', next ? null : 'none');
+  document.getElementById('btnGridAll').classList.toggle('on', anyOn ? false : true);
+}
 function upd() {
   const fs   = document.getElementById('fs').value;
   const fst  = document.getElementById('fst').value;
@@ -1500,6 +1827,8 @@ function renderFlashPanel() {
         if (flashSortDim === dim.id) flashSortAsc = !flashSortAsc;
         else { flashSortDim = dim.id; flashSortAsc = false; }
         renderFlashPanel();
+  renderPlants();
+  renderGridPanel();
       });
   });
   // "Total" header
@@ -1586,6 +1915,287 @@ function renderFlashPanel() {
     });
 }
 
+/* ── Power plant layer ─────────────────────────────────────────────────── */
+function renderPlants() {
+  gPlants.selectAll('*').remove();
+  POWER_PLANTS.forEach(p => {
+    const [px, py] = proj([p.lng, p.lat]);
+    const pt  = PT[p.t] || {c:'#888'};
+    const col = pt.c;
+    const r   = Math.max(5.5, Math.sqrt(p.mw) * 0.22);
+    const retired = p.s === 'retired';
+    const building = p.s === 'construction';
+
+    // Outer ring (construction = dashed)
+    if (building) {
+      gPlants.append('circle').attr('cx',px).attr('cy',py).attr('r',r+3.5)
+        .attr('fill','none').attr('stroke',col).attr('stroke-width',1.2)
+        .attr('stroke-dasharray','4,3').attr('opacity',0.60).attr('pointer-events','none');
+    }
+
+    // White halo for legibility on any background
+    gPlants.append('circle').attr('cx',px).attr('cy',py).attr('r',r+1.5)
+      .attr('fill','var(--surface)').attr('opacity',0.72).attr('pointer-events','none');
+
+    // Main circle
+    gPlants.append('circle').attr('cx',px).attr('cy',py).attr('r',r)
+      .attr('fill', retired ? 'var(--raised)' : col)
+      .attr('fill-opacity', retired ? 0.70 : 0.85)
+      .attr('stroke', col).attr('stroke-width', retired ? 1.2 : 1.8)
+      .attr('stroke-dasharray', retired ? '3,2' : null)
+      .attr('opacity', retired ? 0.65 : 0.92)
+      .style('cursor','crosshair')
+      .on('mouseover', e => showPlantTT(e,p))
+      .on('mousemove', e => showPlantTT(e,p))
+      .on('mouseout', hideTT);
+
+    // Fuel-type letter inside
+    const fLbl = {nuclear:'N', coal:'C', gas:'G', 'pumped-hydro':'P', hydro:'H', 'wind-off':'W', 'wind-on':'W'}[p.t] || '?';
+    gPlants.append('text').attr('x',px).attr('y',py)
+      .attr('text-anchor','middle').attr('dominant-baseline','middle')
+      .attr('font-size', Math.max(6, r*0.72)).attr('font-weight','700')
+      .attr('fill', retired ? col : 'var(--surface)')
+      .attr('pointer-events','none').attr('opacity', retired ? 0.75 : 1)
+      .text(fLbl);
+
+    // Capacity label below circle (for plants ≥ 1 GW only)
+    if (p.mw >= 1000 && !retired) {
+      const lbl = p.mw >= 1000 ? (p.mw/1000).toFixed(1)+'GW' : p.mw+'MW';
+      gPlants.append('text').attr('x',px).attr('y',py+r+7)
+        .attr('text-anchor','middle').attr('font-size',6.5).attr('font-weight','600')
+        .attr('fill',col).attr('fill-opacity',0.82).attr('pointer-events','none')
+        .text(lbl);
+    }
+  });
+  gPlants.style('display','none'); // hidden by default
+}
+
+
+/* ── Panel G: Grid Balance & Vulnerability ─────────────────────────────────── */
+function renderGridPanel() {
+  const svg = d3.select('#gridMetricSvg');
+  svg.selectAll('*').remove();
+  const PW=860, PH=230;
+
+  // ── Computed metrics ─────────────────────────────────────────────────────
+  const active = DEALS.filter(d => d.s !== 'Dead');
+  const totalDemand  = d3.sum(active, d => d.mwNum || 0);
+  const signedDemand = d3.sum(active.filter(d => d.substation === 'signed'), d => d.mwNum || 0);
+  const pendDemand   = totalDemand - signedDemand;
+  const domDemand    = d3.sum(active.filter(d => d.u === 'Dominion'), d => d.mwNum || 0);
+
+  const operating = POWER_PLANTS.filter(p => p.s === 'operating');
+  const genByType = {};
+  operating.forEach(p => { genByType[p.t] = (genByType[p.t]||0) + p.mw; });
+  const totalGen  = d3.sum(operating, p => p.mw);
+  const cvowMW    = d3.sum(POWER_PLANTS.filter(p => p.s === 'construction'), p => p.mw);
+
+  const typeOrder = ['nuclear','pumped-hydro','gas','coal','hydro'];
+  const typeColors = {'nuclear':'#FCD34D','pumped-hydro':'#0EA5E9','gas':'#F97316',
+                      'coal':'#57534E','hydro':'#22D3EE','wind-off':'#34D399'};
+
+  /* ══════════════════════════════════════════════════════════════
+     SECTION 1 — Demand / Supply bars (left third)
+  ══════════════════════════════════════════════════════════════ */
+  const s1 = svg.append('g').attr('transform','translate(18,14)');
+  const bw = 226, barH = 16, barGap = 24;
+  const xMax = Math.max(totalGen+cvowMW, totalDemand) * 1.05;
+  const xs = d3.scaleLinear().domain([0, xMax]).range([0, bw]);
+
+  const BARS = [
+    {lbl:'Operating generation',  val:totalGen,   col:'#16A085', note:`${(totalGen/1000).toFixed(1)} GW VA+MD operating`},
+    {lbl:'+ CVOW (construction)', val:cvowMW,     col:'#34D399', note:`${(cvowMW/1000).toFixed(1)} GW offshore wind, online ~2026`, stack:totalGen},
+    {lbl:'Active demand',         val:totalDemand,col:'#EF9F27', note:`${(totalDemand/1000).toFixed(1)} GW announced (excl. dead)`},
+    {lbl:'  Secured (signed ESA)',val:signedDemand,col:'#185FA5',note:`${(signedDemand/1000).toFixed(1)} GW with signed interconnection`},
+    {lbl:'  Unsecured / pending', val:pendDemand, col:'#DC2626', note:`${(pendDemand/1000).toFixed(1)} GW — no committed power`},
+  ];
+
+  // Section title
+  s1.append('text').attr('x',0).attr('y',-3).attr('font-size',8).attr('font-weight','700')
+    .attr('fill','var(--muted)').attr('letter-spacing','.05em').attr('text-transform','uppercase')
+    .text('SUPPLY vs. DEMAND (MW)');
+
+  BARS.forEach(({lbl,val,col,note,stack},i) => {
+    const y = i * (barH + barGap) + 6;
+    const x0 = stack ? xs(stack) : 0;
+    const blen = xs(val);
+    const isIndent = lbl.startsWith('  ');
+
+    // Background track
+    if (!stack) {
+      s1.append('rect').attr('x',0).attr('y',y).attr('width',bw).attr('height',barH)
+        .attr('fill','var(--raised)').attr('rx',3);
+    }
+    // Bar
+    s1.append('rect').attr('x',x0).attr('y',y).attr('width',blen).attr('height',barH)
+      .attr('fill',col).attr('rx',3).attr('opacity',stack?0.75:0.88)
+      .style('cursor','default')
+      .on('mouseover',e=>{
+        posTT(e);ttEl.style.display='block';
+        ttEl.innerHTML=`<p class="tt-n">${lbl.trim()}</p><p style="font-size:11px;color:var(--muted)">${note}</p>`;
+      }).on('mousemove',e=>posTT(e)).on('mouseout',hideTT);
+
+    // Label — stacked bars anchor near their bar start
+    const labelX = stack ? Math.min(xs(stack)+2, bw-60) : (isIndent ? 10 : 0);
+    s1.append('text').attr('x', labelX).attr('y',y-3)
+      .attr('font-size', stack ? 7 : 7.5)
+      .attr('font-weight', (isIndent||stack) ? '400' : '600')
+      .attr('fill', stack ? col : 'var(--muted)')
+      .attr('pointer-events','none').text(lbl.trim());
+
+    // Value at end of bar
+    const xv = Math.max(x0+blen+3, 3);
+    s1.append('text').attr('x',xv).attr('y',y+barH/2)
+      .attr('dominant-baseline','middle').attr('font-size',8.5)
+      .attr('font-weight','700').attr('fill',col)
+      .attr('fill-opacity',0.90).attr('pointer-events','none')
+      .text(val>=1000?(val/1000).toFixed(1)+'GW':val+'MW');
+  });
+
+  // Ratio label
+  const ratio = (totalDemand/totalGen);
+  s1.append('text').attr('x',bw/2).attr('y',PH-22)
+    .attr('text-anchor','middle').attr('font-size',8.5).attr('font-weight','700')
+    .attr('fill', ratio>0.7 ? '#DC2626':'#B45309')
+    .text(`Demand = ${(ratio*100).toFixed(0)}% of total supply capacity`);
+  s1.append('text').attr('x',bw/2).attr('y',PH-10)
+    .attr('text-anchor','middle').attr('font-size',7).attr('fill','var(--hint)')
+    .text('but 41% of demand has no signed ESA — geographic/temporal mismatch');
+
+  /* ══════════════════════════════════════════════════════════════
+     SECTION 2 — Generation mix donut (centre)
+  ══════════════════════════════════════════════════════════════ */
+  const s2cx = 18 + bw + 28 + 100, s2cy = PH/2 - 8;
+  const outerR = 72, innerR = 42;
+  const s2 = svg.append('g').attr('transform',`translate(${s2cx},${s2cy})`);
+
+  // Title
+  svg.append('text').attr('x',s2cx).attr('y',10).attr('text-anchor','middle')
+    .attr('font-size',8).attr('font-weight','700').attr('fill','var(--muted)')
+    .attr('letter-spacing','.05em').text('GENERATION MIX');
+
+  const pieData = typeOrder.filter(t => genByType[t])
+    .map(t => ({t, mw:genByType[t]}));
+  const pie = d3.pie().value(d=>d.mw).sort(null);
+  const arc = d3.arc().innerRadius(innerR).outerRadius(outerR);
+  const arcH= d3.arc().innerRadius(innerR).outerRadius(outerR+5);
+
+  pie(pieData).forEach(slice => {
+    const col = typeColors[slice.data.t] || '#888';
+    s2.append('path').attr('d', arc(slice))
+      .attr('fill',col).attr('opacity',0.88).attr('stroke','var(--surface)').attr('stroke-width',1.5)
+      .style('cursor','default')
+      .on('mouseover',function(e){
+        d3.select(this).attr('d', arcH(slice)).attr('opacity',1);
+        posTT(e); ttEl.style.display='block';
+        const pct = Math.round(slice.data.mw*100/totalGen);
+        const lbl = PT[slice.data.t]?.lbl || slice.data.t;
+        ttEl.innerHTML=`<p class="tt-n">${lbl}</p>
+          <div class="tt-r"><span class="tt-l">Capacity</span><span class="tt-v">${(slice.data.mw/1000).toFixed(1)} GW</span></div>
+          <div class="tt-r"><span class="tt-l">Share</span><span class="tt-v">${pct}% of VA+MD generation</span></div>`;
+      })
+      .on('mousemove',e=>posTT(e))
+      .on('mouseout',function(){
+        d3.select(this).attr('d',arc(slice)).attr('opacity',0.88); hideTT();
+      });
+  });
+
+  // Centre text
+  s2.append('text').attr('text-anchor','middle').attr('dominant-baseline','middle')
+    .attr('y',-7).attr('font-size',11).attr('font-weight','700').attr('fill','var(--text)')
+    .text((totalGen/1000).toFixed(1));
+  s2.append('text').attr('text-anchor','middle').attr('dominant-baseline','middle')
+    .attr('y',6).attr('font-size',7.5).attr('fill','var(--muted)').text('GW total');
+  s2.append('text').attr('text-anchor','middle').attr('dominant-baseline','middle')
+    .attr('y',17).attr('font-size',7).attr('fill','var(--hint)').text('incl. WV grid feeds');
+
+  // Legend below donut
+  const legY = s2cy + outerR + 8;
+  pieData.forEach(({t,mw},i) => {
+    const col=typeColors[t]||'#888';
+    const lx=s2cx-95+(i%3)*66, ly=legY+(Math.floor(i/3)*13);
+    svg.append('rect').attr('x',lx).attr('y',ly).attr('width',7).attr('height',7)
+      .attr('fill',col).attr('rx',1);
+    svg.append('text').attr('x',lx+9).attr('y',ly+6).attr('font-size',7)
+      .attr('fill','var(--muted)').text((PT[t]?.lbl||t).replace(' / CCGT',''));
+  });
+
+  /* ══════════════════════════════════════════════════════════════
+     SECTION 3 — Vulnerability matrix (right)
+  ══════════════════════════════════════════════════════════════ */
+  const s3x = 18 + bw + 28 + 200 + 28;
+  const s3w = PW - s3x - 12;
+  const s3 = svg.append('g').attr('transform',`translate(${s3x},14)`);
+
+  svg.append('text').attr('x',s3x).attr('y',10).attr('text-anchor','start')
+    .attr('font-size',8).attr('font-weight','700').attr('fill','var(--muted)')
+    .attr('letter-spacing','.05em').text('SYSTEMIC VULNERABILITIES');
+
+  const domPct = Math.round(domDemand*100/totalDemand);
+  const nucPct = Math.round((genByType.nuclear||0)*100/totalGen);
+  const coalMW = (genByType.coal||0);
+  const pendPct= Math.round(pendDemand*100/totalDemand);
+
+  const VULNS = [
+    {lbl:'Dominion merger exposure', score: domPct>45?3:domPct>30?2:1,
+     note:`${domPct}% of active demand (${(domDemand/1000).toFixed(1)} GW) in Dominion service territory — NextEra merger creates rate and governance uncertainty for ratepayers funding data-centre infrastructure.`},
+    {lbl:'Nuclear baseload dependency', score: nucPct>35?2:1,
+     note:`Nuclear provides ${nucPct}% of VA+MD generation (${(genByType.nuclear/1000).toFixed(1)} GW). North Anna licensed to 2060, Surry to 2052. Any unplanned outage or licence uncertainty immediately constrains data-centre supply options.`},
+    {lbl:'Coal transition risk', score: coalMW>2000?3:coalMW>1000?2:1,
+     note:`${(coalMW/1000).toFixed(1)} GW of coal (Mt. Storm 1.6 GW + Wyoming Station ~2 GW, both WV) currently feeds the VA grid via 765kV/500kV backbones. EPA MATS retirement risk — no in-state replacement secured.`},
+    {lbl:'NoVA transmission constraint', score: 3,
+     note:`Five new 500kV projects under SCC review (g3,g4,g5,g16,g17) plus Morrisville–Wishing Star (filed Feb 2026). Without completion, Dominion cannot execute further ESAs in eastern Loudoun — a constraint that materialized publicly in 2022.`},
+    {lbl:'Unsecured pipeline demand', score: pendPct>40?3:pendPct>25?2:1,
+     note:`${pendPct}% of active demand (${(pendDemand/1000).toFixed(1)} GW) has no signed interconnection agreement. Includes Berry Hill AEP contingency (2 GW), EdgeCore (1.1 GW), CleanArc (0.9 GW), Brightseat (0.82 GW, moratorium). Most exposed to regulatory or infrastructure failure.`},
+  ];
+
+  const sColors = {1:'#D1FAE5',2:'#FEF9C3',3:'#FECACA'};
+  const sBadge  = {1:'Low',2:'Elevated',3:'High'};
+  const sBadgeC = {1:'#16A085',2:'#B45309',3:'#DC2626'};
+  const rowH=36, vbw=s3w;
+
+  VULNS.forEach(({lbl,score,note},i) => {
+    const y = i * rowH + 6;
+    const bc = sColors[score];
+
+    // Row background
+    s3.append('rect').attr('x',0).attr('y',y).attr('width',vbw).attr('height',rowH-3)
+      .attr('fill',bc).attr('rx',3).attr('opacity',0.60)
+      .style('cursor','default')
+      .on('mouseover',e=>{
+        posTT(e); ttEl.style.display='block';
+        ttEl.innerHTML=`<p class="tt-n">${lbl}</p>
+          <span class="tt-tag" style="background:${bc};color:${sBadgeC[score]};margin-bottom:6px">${sBadge[score]} risk</span>
+          <p style="font-size:10.5px;color:var(--muted);margin:6px 0 0;line-height:1.45">${note}</p>`;
+      }).on('mousemove',e=>posTT(e)).on('mouseout',hideTT);
+
+    // Score fill bar
+    s3.append('rect').attr('x',0).attr('y',y).attr('width',vbw*(score/3)).attr('height',rowH-3)
+      .attr('fill',sBadgeC[score]).attr('rx',3).attr('opacity',0.22)
+      .attr('pointer-events','none');
+
+    // Label
+    s3.append('text').attr('x',6).attr('y',y+11)
+      .attr('font-size',7.5).attr('font-weight','600').attr('fill','var(--text)')
+      .attr('pointer-events','none').text(lbl);
+
+    // Badge
+    s3.append('rect').attr('x',vbw-42).attr('y',y+4).attr('width',38).attr('height',11)
+      .attr('fill',bc).attr('rx',2).attr('pointer-events','none');
+    s3.append('text').attr('x',vbw-23).attr('y',y+10.5)
+      .attr('text-anchor','middle').attr('font-size',7).attr('font-weight','700')
+      .attr('fill',sBadgeC[score]).attr('pointer-events','none').text(sBadge[score]);
+
+    // Score dots
+    for(let d=0;d<3;d++){
+      s3.append('circle').attr('cx',vbw-52+(d*8)).attr('cy',y+rowH-11).attr('r',2.5)
+        .attr('fill', d<score ? sBadgeC[score] : 'var(--raised)')
+        .attr('stroke',sBadgeC[score]).attr('stroke-width',0.7)
+        .attr('pointer-events','none');
+    }
+  });
+}
+
 /* ── Load topology and render ────────────────────────────────────────── */
 d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/counties-10m.json').then(us => {
   const counties = topojson.feature(us, us.objects.counties);
@@ -1657,43 +2267,96 @@ d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/counties-10m.json').then(us => 
   });
 
   // Transmission grid layer
+  // Tiered grid rendering: 500kV / 230kV / Proposed
   GRID_LINES.forEach(line => {
     const col = GC[line.kv]?.[line.status] || '#888';
-    const sw  = line.kv === 500 ? 2.0 : 1.3;
+    const sw  = line.kv === 765 ? 3.0 : line.kv === 500 ? 2.2 : 1.5;
     const da  = line.status === 'proposed' ? '8,5' : line.status === 'new' ? '5,3' : null;
     const pts = line.coords.map(([lat,lng]) => proj([lng,lat]));
     const d   = 'M' + pts.map(([x,y]) => x.toFixed(1)+','+y.toFixed(1)).join('L');
+    const grp = line.status === 'proposed' ? gGridProp :
+                line.status === 'new'      ? gGridNew  :
+                line.kv === 500           ? gGrid500  : gGrid230;
 
-    // Halo for legibility
-    gGrid.append('path').attr('d',d).attr('fill','none')
-      .attr('stroke','white').attr('stroke-width', sw+2.5).attr('opacity',0.45)
+    grp.append('path').attr('d',d).attr('fill','none')
+      .attr('stroke','white').attr('stroke-width',sw+3).attr('opacity',0.50)
       .attr('stroke-linecap','round').attr('pointer-events','none');
 
-    // Main line
-    gGrid.append('path').attr('d',d).attr('fill','none')
-      .attr('stroke', col).attr('stroke-width', sw)
-      .attr('stroke-dasharray', da).attr('opacity', line.status==='proposed' ? 0.70 : 0.88)
+    grp.append('path').attr('d',d).attr('fill','none')
+      .attr('stroke',col).attr('stroke-width',sw)
+      .attr('stroke-dasharray',da).attr('opacity',line.status==='proposed'?0.72:0.90)
       .attr('stroke-linecap','round').style('cursor','crosshair')
-      .on('mouseover', e => showGridTT(e,line))
-      .on('mousemove', e => showGridTT(e,line))
-      .on('mouseout',  hideTT);
+      .on('mouseover',e=>showGridTT(e,line))
+      .on('mousemove',e=>showGridTT(e,line))
+      .on('mouseout',hideTT);
   });
 
-  // Substation markers
+  // Connector substations — all on gGridSub (above all line tiers)
   SUBSTATIONS.forEach(ss => {
     const [px,py] = proj([ss.lng, ss.lat]);
     const col = GC[ss.kv]?.[ss.status] || '#888';
-    const r   = ss.kv === 500 ? 4.0 : 2.8;
-    gGrid.append('rect')
-      .attr('x', px-r).attr('y', py-r).attr('width', r*2).attr('height', r*2)
-      .attr('fill', ss.status==='existing' ? col : 'white')
-      .attr('stroke', col).attr('stroke-width', ss.status==='existing' ? 0 : 1.5)
-      .attr('opacity', 0.90).attr('pointer-events','none');
-    gGrid.append('text').attr('x', px+r+2).attr('y', py+1)
-      .attr('font-size', 6.5).attr('font-weight','600').attr('fill', col)
-      .attr('fill-opacity', 0.82).attr('pointer-events','none')
+    const r   = ss.kv === 500 ? 3.5 + Math.min((ss.cx||1)-1,3)*0.7 : 2.8;
+    const cx  = ss.cx || 1;
+
+    // ── Connector arcs: radial ticks at hub substations (cx ≥ 3) ────────────
+    if (cx >= 3) {
+      const nTicks = Math.min(cx, 6);
+      for (let i = 0; i < nTicks; i++) {
+        const ang = (i / nTicks) * 2 * Math.PI - Math.PI/4;
+        const r1 = r + 1.5, r2 = r + 5.5;
+        gGridSub.append('line')
+          .attr('x1', px + r1*Math.cos(ang)).attr('y1', py + r1*Math.sin(ang))
+          .attr('x2', px + r2*Math.cos(ang)).attr('y2', py + r2*Math.sin(ang))
+          .attr('stroke', col).attr('stroke-width', 1.1)
+          .attr('opacity', 0.55).attr('pointer-events','none');
+      }
+    }
+
+    // Step-down ring: outer dashed circle + inner 230kV core dot
+    if (ss.stepDown) {
+      gGridSub.append('circle').attr('cx',px).attr('cy',py).attr('r',r+4)
+        .attr('fill','none').attr('stroke',col)
+        .attr('stroke-width',1.0).attr('stroke-dasharray','2,2')
+        .attr('opacity',0.38).attr('pointer-events','none');
+      gGridSub.append('circle').attr('cx',px).attr('cy',py).attr('r',2.2)
+        .attr('fill', GC[230]?.['existing']||'#1D4ED8')
+        .attr('opacity',0.75).attr('pointer-events','none');
+    }
+
+    // Main node circle
+    gGridSub.append('circle').attr('cx',px).attr('cy',py).attr('r',r)
+      .attr('fill',ss.status==='existing'?col:'var(--surface)')
+      .attr('stroke',col).attr('stroke-width',ss.status==='existing'?0.6:1.6)
+      .attr('opacity',0.92).attr('pointer-events','none');
+
+    // Name label
+    gGridSub.append('text').attr('x',px+r+2).attr('y',py+1)
+      .attr('font-size',7).attr('font-weight','600').attr('fill','var(--surface)')
+      .attr('stroke','var(--surface)').attr('stroke-width',2).attr('stroke-linejoin','round')
+      .attr('paint-order','stroke').attr('fill-opacity',0.90).attr('pointer-events','none')
+      .text(ss.name);
+    gGridSub.append('text').attr('x',px+r+2).attr('y',py+1)
+      .attr('font-size',7).attr('font-weight','600').attr('fill',col)
+      .attr('fill-opacity',0.90).attr('pointer-events','none')
       .text(ss.name);
   });
+
+  // Coverage gap overlays (hidden by default, toggle via ⚠ Gaps)
+  mainC.forEach(f => {
+    const fips = String(f.id).padStart(5,'0');
+    const gap  = GAPS[fips]; if (!gap) return;
+    const gs   = GAP_STYLE[gap.level];
+    gGaps.append('path').datum(f).attr('d',pth)
+      .attr('fill',gs.fill).attr('fill-opacity',gs.fillOp)
+      .attr('stroke',gs.stroke).attr('stroke-width',gs.strokeW)
+      .attr('stroke-dasharray',gs.dash).attr('stroke-opacity',gs.strokeOp)
+      .style('cursor','crosshair')
+      .on('mouseover',e=>showGapTT(e,gap))
+      .on('mousemove',e=>showGapTT(e,gap))
+      .on('mouseout',hideTT);
+  });
+  gGaps.style('display','none');
+  // gGridSub stays visible (controlled via toggleGridAll)
 
   // State labels
   [{name:'VIRGINIA',lng:-79.6,lat:37.2},{name:'MARYLAND',lng:-77.2,lat:39.56},{name:'D.C.',lng:-77.01,lat:38.88}]
@@ -1756,7 +2419,7 @@ d3.json('https://cdn.jsdelivr.net/npm/us-atlas@3/counties-10m.json').then(us => 
 /* ── Mobile / responsive init ──────────────────────────────────────────────── */
 (function initResponsive() {
   // Wrap panel SVGs in horizontal scroll containers
-  ['capSvg','pipeSvg','scatterSvg','pueSvg','flashSvg'].forEach(id => {
+  ['capSvg','pipeSvg','scatterSvg','pueSvg','flashSvg','gridMetricSvg'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
     const wrap = document.createElement('div');
