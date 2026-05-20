@@ -446,6 +446,11 @@ hr.rule{border:none;border-top:0.5px solid var(--border);margin:28px 0}
     <span class="toggle-desc"><strong>Regulatory risk choropleth.</strong> Colors each county that contains a deal by the aggregate flashpoint score of the highest-risk deal within it (mint green = low risk, rose = high risk, 0–18 scale). Off by default. Useful overlay when the utility layer is turned off — the two encode complementary information (who serves the county vs. how contested development is). See <a href="#regulatory">Section 9</a> for the full scoring methodology.</span>
   </div>
 
+  <div class="toggle-row">
+    <span class="toggle-btn">◆ Gen. plants</span>
+    <span class="toggle-desc"><strong>15 major power stations</strong> sized by capacity (MW, √-scaled) and coloured by fuel type. Circle letter: N = Nuclear, G = Gas, C = Coal, P = Pumped-storage, H = Hydro, W = Offshore wind. Dashed ring = under construction; dashed outline = retired. Hover for full tooltip including capacity, owner, status, and policy significance. <em>Off by default</em> — toggle on to overlay generation supply alongside transmission and demand.</span>
+  </div>
+
   <div class="callout warn">
     <div class="callout-label">Performance note</div>
     <p>At very high zoom levels (10×–14×), toggling all layers simultaneously can be slow on older devices. The grid lines layer is the most computationally intensive due to substation label rendering.</p>
@@ -466,7 +471,7 @@ hr.rule{border:none;border-top:0.5px solid var(--border);margin:28px 0}
       <tr><td>Deals</td><td>All status / Active / Dead / Contested / Announced</td><td>Filters by deal status; useful for isolating the live pipeline from failed or stalled projects.</td></tr>
       <tr><td>State</td><td>All / Virginia / Maryland</td><td>Restricts to one jurisdiction; highlights the regulatory contrast (VA DCSA exemption vs. MD framework).</td></tr>
       <tr><td>Utility</td><td>All / Dominion / BGE / Pepco / REC / AEP</td><td>Isolates deals within a utility's service territory. Filtering by REC shows the two rural Virginia projects explicitly not on Dominion's grid.</td></tr>
-      <tr><td>Type</td><td>All / Hyperscale / AI·GPU / Wholesale colo / Campus / Speculative</td><td>Filters by project typology. Use to compare investment efficiency across ownership models.</td></tr>
+      <tr><td>Type</td><td>All / Hyperscale / AI·GPU / Wholesale developer / Campus / Speculative</td><td>Filters by project typology. Use to compare investment efficiency across ownership models.</td></tr>
     </tbody>
   </table>
 
@@ -537,6 +542,15 @@ hr.rule{border:none;border-top:0.5px solid var(--border);margin:28px 0}
     </div>
   </div>
 
+  <div class="panel-card">
+    <div class="panel-id">G</div>
+    <div>
+      <div class="panel-body-title">Grid balance &amp; vulnerability analysis</div>
+      <div class="panel-body-desc">Three-section panel providing a quantitative overview of the supply-demand balance and systemic grid vulnerabilities. <strong>Left: Demand vs. supply</strong> — horizontal bars showing total active announced demand (12,770 MW), demand with signed interconnection agreements (7,500 MW, 58%), and total VA+MD operating generation (19,857 MW). The 41% unsecured demand gap is the dashboard's central policy finding. <strong>Centre: Generation mix donut</strong> — VA+MD operating generation by fuel type: nuclear 40%, gas 33%, pumped-storage 15%, coal 8%, hydro 3%. Hover each segment for MW and share. <strong>Right: Vulnerability matrix</strong> — five systemic risks scored (Dominion merger exposure, nuclear dependency, coal transition, NoVA transmission constraint, unsecured pipeline), each shown as a fill bar and severity badge.</div>
+      <div class="panel-body-fields">Computed dynamically from DEALS and POWER_PLANTS — updates when data changes</div>
+    </div>
+  </div>
+
   <h3>Interactive controls summary</h3>
   <table class="gloss-table">
     <thead><tr><th>Panel</th><th>Control</th><th>What it does</th></tr></thead>
@@ -550,6 +564,7 @@ hr.rule{border:none;border-top:0.5px solid var(--border);margin:28px 0}
       <tr><td>D</td><td>Click column header</td><td>Sorts table by that column (click again to reverse). Arrow indicator shows active sort.</td></tr>
       <tr><td>E</td><td>Show estimated</td><td>Overlays hollow dots for deals with known cooling types, showing inferred PUE position relative to the 1.2 VA DCSA threshold line.</td></tr>
       <tr><td>F</td><td>Click column header</td><td>Sorts flashpoint rows by that regulatory dimension. Click again to reverse.</td></tr>
+      <tr><td>G</td><td>Hover segments / bars</td><td>Shows exact MW and percentage for each generation segment or demand bar. All values computed live from the current dataset.</td></tr>
     </tbody>
   </table>
 </section>
@@ -572,7 +587,7 @@ hr.rule{border:none;border-top:0.5px solid var(--border);margin:28px 0}
       <div class="type-example">STACK / Berry Hill, STACK / Stafford Campus</div>
     </div>
     <div class="type-card">
-      <div class="type-name"><span class="type-dot" style="background:#16A085"></span>Wholesale colo</div>
+      <div class="type-name"><span class="type-dot" style="background:#16A085"></span>Wholesale developer</div>
       <div class="type-desc">A developer builds a campus to spec for one or more anchor tenants under long-term wholesale leases. The developer owns the physical infrastructure; the tenant brings the compute load. The most common model in the dataset.</div>
       <div class="type-example">CleanArc VA1, EdgeCore Louisa, PowerHouse 95, Vantage VA4</div>
     </div>
@@ -757,8 +772,38 @@ hr.rule{border:none;border-top:0.5px solid var(--border);margin:28px 0}
 </section>
 
 <!-- ── 12. Citation ────────────────────────────────────────────────────────── -->
-<section class="section" id="cite">
+<section class="section" id="plants">
   <div class="section-number">14</div>
+  <h2>Power Generation Layer</h2>
+  <p>The ◆ Gen. plants layer shows 15 major power stations, encoded by capacity and fuel type. It is the supply-side counterpart to the transmission grid layer — together they show where electricity is generated, how it moves, and where it reaches data center demand.</p>
+
+  <h3>Plant encoding</h3>
+  <table class="gloss-table">
+    <thead><tr><th>Symbol</th><th>Fuel type</th><th>Colour</th><th>Key examples</th></tr></thead>
+    <tbody>
+      <tr><td><strong>N</strong></td><td>Nuclear</td><td style="color:#B45309">Amber-gold</td><td>North Anna (1,892 MW), Surry (1,676 MW), Calvert Cliffs (1,756 MW)</td></tr>
+      <tr><td><strong>P</strong></td><td>Pumped-storage</td><td style="color:#0284C7">Sky blue</td><td>Bath County PS (3,003 MW) — primary Dominion peaker</td></tr>
+      <tr><td><strong>G</strong></td><td>Gas / CCGT</td><td style="color:#EA580C">Orange</td><td>Possum Point (1,728 MW), Warren County (1,503 MW), Chesterfield (1,458 MW)</td></tr>
+      <tr><td><strong>C</strong></td><td>Coal</td><td style="color:#78350F">Dark brown</td><td>Mt. Storm WV (1,600 MW operating), Clover VA (1,357 MW retired)</td></tr>
+      <tr><td><strong>H</strong></td><td>Hydro / run-of-river</td><td style="color:#0891B2">Cyan</td><td>Conowingo Dam (572 MW, PJM N-S transfer node)</td></tr>
+      <tr><td><strong>W</strong></td><td>Offshore wind</td><td style="color:#059669">Emerald</td><td>CVOW Phase 1 (2,600 MW, under construction, ~27 miles off VA Beach)</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Status visual encoding</h3>
+  <ul>
+    <li><strong>Operating</strong> — solid filled circle with white letter. Full opacity.</li>
+    <li><strong>Under construction</strong> — solid fill + outer dashed halo ring. CVOW Phase 1 is the only plant in this state.</li>
+    <li><strong>Retired</strong> — white fill with coloured dashed outline and coloured letter. Visually recessive. Clover Power Station (retired 2023) is the only retired plant shown.</li>
+  </ul>
+
+  <h3>Policy context: generation vs. demand</h3>
+  <p>Total VA+MD operating generation (19,857 MW) exceeds total active announced data center demand (12,770 MW) on paper. But this aggregate comparison is misleading: generation capacity is not fully dispatchable, much of it is already committed to residential and commercial loads, and data center demand is concentrated in a small geographic area (NoVA / Ashburn) while generation is dispersed. The more meaningful figure is that only 58% of announced data center demand has a signed interconnection agreement.</p>
+  <p>Nuclear plants (40% of VA+MD generation, 8,096 MW) run as baseload and cannot be dispatched to serve incremental demand. Bath County Pumped Storage (3,003 MW) charges from existing nuclear output overnight and discharges at peak — but the near-flat 24h demand profile of large data centers fundamentally alters this dispatch model. See Panel G for the full supply-demand vulnerability analysis.</p>
+</section>
+
+<section class="section" id="cite">
+  <div class="section-number">15</div>
   <h2>Citation</h2>
   <p>If you use data or visualizations from this dashboard in academic, journalistic, or policy work, please cite as:</p>
   <div class="citation">
